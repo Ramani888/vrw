@@ -1,103 +1,236 @@
-import Image from "next/image";
+import Link from "next/link"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import Carousel from "@/components/carousel"
+import CategoryCircle from "@/components/category-circle"
+import ProductCard from "@/components/product-card"
+import PriceFilterBox from "@/components/price-filter-box"
+
+// Mock data for categories
+const categories = [
+  { name: "Electronics", slug: "electronics", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Clothing", slug: "clothing", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Home & Kitchen", slug: "home", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Beauty", slug: "beauty", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Toys", slug: "toys", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Sports", slug: "sports", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Books", slug: "books", image: "/placeholder.svg?height=100&width=100" },
+  { name: "Grocery", slug: "grocery", image: "/placeholder.svg?height=100&width=100" },
+]
+
+// Mock data for products
+const products = [
+  {
+    id: "1",
+    name: "Wireless Bluetooth Earbuds",
+    description: "High-quality sound with noise cancellation and long battery life.",
+    price: 1499,
+    mrp: 2999,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "electronics",
+  },
+  {
+    id: "2",
+    name: "Men's Casual T-Shirt",
+    description: "Comfortable cotton t-shirt for everyday wear.",
+    price: 499,
+    mrp: 999,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "clothing",
+  },
+  {
+    id: "3",
+    name: "Smart LED TV 43-inch",
+    description: "Full HD display with smart features and multiple connectivity options.",
+    price: 24999,
+    mrp: 32999,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "electronics",
+  },
+  {
+    id: "4",
+    name: "Non-Stick Cookware Set",
+    description: "Complete set of non-stick pans and pots for your kitchen.",
+    price: 1999,
+    mrp: 3499,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "home",
+  },
+  {
+    id: "5",
+    name: "Women's Running Shoes",
+    description: "Lightweight and comfortable shoes for running and workouts.",
+    price: 1299,
+    mrp: 2499,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "clothing",
+  },
+  {
+    id: "6",
+    name: "Moisturizing Face Cream",
+    description: "Hydrating face cream for all skin types.",
+    price: 399,
+    mrp: 599,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "beauty",
+  },
+  {
+    id: "7",
+    name: "Stainless Steel Water Bottle",
+    description: "Insulated bottle that keeps your drinks hot or cold for hours.",
+    price: 699,
+    mrp: 999,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "home",
+  },
+  {
+    id: "8",
+    name: "Smartphone Stand and Holder",
+    description: "Adjustable stand for your smartphone or tablet.",
+    price: 299,
+    mrp: 499,
+    image: "/placeholder.svg?height=300&width=300",
+    category: "electronics",
+  },
+]
+
+// Filter products by price range
+const under100 = products.filter((product) => product.price < 200)
+const under200 = products.filter((product) => product.price < 300)
+const under300 = products.filter((product) => product.price < 500)
+const under500 = products.filter((product) => product.price < 1000)
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    // container px-4 md:px-6
+    <div className="flex flex-col gap-12 pb-12">
+      {/* Hero Banner Carousel */}
+      <section className="w-full">
+        <Carousel>
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="relative h-[300px] w-full sm:h-[400px] md:h-[500px]">
+              <Image
+                src={`/placeholder.svg?height=500&width=1200&text=Banner+${item}`}
+                alt={`Banner ${item}`}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 p-4 text-center text-white">
+                <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">Special Offer {item}</h2>
+                <p className="mt-2 max-w-md text-sm sm:text-base md:text-lg">
+                  Discover amazing deals on our latest products
+                </p>
+                <Button className="mt-4">Shop Now</Button>
+              </div>
+            </div>
+          ))}
+        </Carousel>
+      </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Categories */}
+      <section className="w-full px-4 md:px-6">
+        <h2 className="mb-6 text-2xl font-bold">Shop by Category</h2>
+        <div className="flex overflow-x-auto pb-4 space-x-4 -mx-4 px-4">
+          {categories.map((category) => (
+            <div key={category.slug} className="flex-shrink-0">
+              <CategoryCircle name={category.name} image={category.image} slug={category.slug} />
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Price Filter Boxes */}
+      <section className="w-full px-4 md:px-6">
+        <h2 className="mb-6 text-2xl font-bold">Shop by Price</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <PriceFilterBox title="UNDER 200" icon="/placeholder.svg?height=64&width=64&text=₹200" slug="under-200" />
+          <PriceFilterBox title="UNDER 300" icon="/placeholder.svg?height=64&width=64&text=₹300" slug="under-300" />
+          <PriceFilterBox title="UNDER 500" icon="/placeholder.svg?height=64&width=64&text=₹500" slug="under-500" />
+          <PriceFilterBox title="UNDER 1000" icon="/placeholder.svg?height=64&width=64&text=₹1000" slug="under-1000" />
+        </div>
+      </section>
+
+      {/* Promotional Banners */}
+      <section className="w-full px-4 md:px-6">
+        <Carousel>
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="relative h-[150px] w-full sm:h-[200px]">
+              <Image
+                src={`/placeholder.svg?height=200&width=1200&text=Promotion+${item}`}
+                alt={`Promotion ${item}`}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 flex flex-col items-start justify-center bg-black/20 p-6 text-white">
+                <h3 className="text-xl font-bold sm:text-2xl">Special Offer</h3>
+                <p className="mt-2 max-w-md text-sm sm:text-base">Up to 50% off on selected items</p>
+                <Button className="mt-4" variant="outline">
+                  View Offers
+                </Button>
+              </div>
+            </div>
+          ))}
+        </Carousel>
+      </section>
+
+      {/* Price Range Sections */}
+      <section className="w-full px-4 md:px-6">
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Under ₹200</h2>
+            <Link href="/category/under-200" className="text-sm font-medium text-primary hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {under100.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Under ₹300</h2>
+            <Link href="/category/under-300" className="text-sm font-medium text-primary hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {under200.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Under ₹500</h2>
+            <Link href="/category/under-500" className="text-sm font-medium text-primary hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {under300.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Under ₹1,000</h2>
+            <Link href="/category/under-1000" className="text-sm font-medium text-primary hover:underline">
+              View All
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {under500.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
-  );
+  )
 }
