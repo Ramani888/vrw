@@ -9,29 +9,29 @@ import { useCart } from "./cart-provider"
 import { Badge } from "@/components/ui/badge"
 
 interface ProductCardProps {
-  id: string
+  _id: string
   name: string
   description: string
   price: number
   mrp: number
-  image: string
+  image: {_id: string, path: string}[]
   category: string
 }
 
-export default function ProductCard({ id, name, description, price, mrp, image, category }: ProductCardProps) {
+export default function ProductCard({ _id, name, description, price, mrp, image, category }: ProductCardProps) {
   const { addToCart, addToWishlist, isInWishlist, isInCart } = useCart()
-  const [isWishlisted, setIsWishlisted] = useState(isInWishlist(id))
-  const [isAddedToCart, setIsAddedToCart] = useState(isInCart(id))
+  const [isWishlisted, setIsWishlisted] = useState(isInWishlist(_id))
+  const [isAddedToCart, setIsAddedToCart] = useState(isInCart(_id))
 
   const discount = Math.round(((mrp - price) / mrp) * 100)
 
   const handleAddToWishlist = () => {
-    addToWishlist({ id, name, price, mrp, image })
+    addToWishlist({ id: _id, name, price, mrp, image: image[0]?.path })
     setIsWishlisted(true)
   }
 
   const handleAddToCart = () => {
-    addToCart({ id, name, price, mrp, image })
+    addToCart({ id: _id, name, price, mrp, image: image[0]?.path })
     setIsAddedToCart(true)
   }
 
@@ -40,10 +40,10 @@ export default function ProductCard({ id, name, description, price, mrp, image, 
       {discount > 0 && <Badge className="absolute left-2 top-2 z-10">{discount}% OFF</Badge>}
 
       <div className="relative">
-        <Link href={`/product/${id}`} className="block overflow-hidden">
+        <Link href={`/product/${_id}`} className="block overflow-hidden">
           <div className="aspect-square overflow-hidden">
             <Image
-              src={image || "/placeholder.svg"}
+              src={image[0]?.path || "/placeholder.svg"}
               alt={name}
               width={300}
               height={300}
@@ -64,7 +64,7 @@ export default function ProductCard({ id, name, description, price, mrp, image, 
             <span className="sr-only">Add to Cart</span>
           </Button>
 
-          <Link href={`/product/${id}`}>
+          <Link href={`/product/${_id}`}>
             <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-white">
               <Eye className="h-4 w-4" />
               <span className="sr-only">View Details</span>

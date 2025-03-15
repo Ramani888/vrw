@@ -24,6 +24,7 @@ import { useState } from "react"
 import { useMobile } from "@/hooks/use-mobile"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import useShop from "@/hooks/useShop"
 
 export default function Header() {
   const { cart, wishlist } = useCart()
@@ -37,6 +38,11 @@ export default function Header() {
     avatar: "/placeholder.svg?height=40&width=40",
     walletBalance: 500,
   }
+
+  const {
+    categoryData,
+    loading
+  } = useShop();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -215,26 +221,15 @@ export default function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Link href="/category/electronics" className="w-full">
-                  Electronics
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/category/clothing" className="w-full">
-                  Clothing
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/category/home" className="w-full">
-                  Home & Kitchen
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/category/beauty" className="w-full">
-                  Beauty
-                </Link>
-              </DropdownMenuItem>
+              {categoryData?.map((item: any) => {
+                return (
+                  <DropdownMenuItem key={item?._id}>
+                    <Link href={`/category/${item?._id}`} className="w-full">
+                      {item?.name}
+                    </Link>
+                  </DropdownMenuItem>
+                )
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
           <Link href="/about" className="text-sm font-medium hover:underline">
@@ -311,4 +306,3 @@ export default function Header() {
     </header>
   )
 }
-

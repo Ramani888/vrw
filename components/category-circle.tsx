@@ -9,7 +9,8 @@ interface CategoryCircleProps {
 
 export default function CategoryCircle({ name, image, slug }: CategoryCircleProps) {
   return (
-    <Link href={`/category/${slug}`} className="flex flex-col items-center gap-2 transition-transform hover:scale-105">
+    // hover:scale-105
+    <Link href={`/category/${slug}`} className="flex flex-col items-center gap-2 transition-transform"> 
       <div className="relative h-20 w-20 overflow-hidden rounded-full border sm:h-24 sm:w-24">
         <Image src={image || "/placeholder.svg"} alt={name} fill className="object-cover" />
       </div>

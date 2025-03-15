@@ -26,7 +26,7 @@ export default function Carousel({
 
   const next = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex === children.length - 1 ? 0 : prevIndex + 1))
-  }, [children.length])
+  }, [children?.length])
 
   const prev = () => {
     setCurrentIndex((prevIndex) => (prevIndex === 0 ? children.length - 1 : prevIndex - 1))
@@ -62,7 +62,7 @@ export default function Carousel({
         className="flex transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {children.map((child, index) => (
+        {children?.map((child, index) => (
           <div key={index} className="min-w-full flex-shrink-0">
             {child}
           </div>
@@ -95,7 +95,7 @@ export default function Carousel({
 
       {showDots && (
         <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-          {children.map((_, index) => (
+          {children?.map((_, index) => (
             <button
               key={index}
               className={`h-2 w-2 rounded-full ${index === currentIndex ? "bg-primary" : "bg-primary/30"}`}

@@ -7,90 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import ProductCard from "@/components/product-card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-
-// Mock products data
-const allProducts = [
-  {
-    id: "1",
-    name: "Wireless Bluetooth Earbuds",
-    description: "High-quality sound with noise cancellation and long battery life.",
-    price: 1499,
-    mrp: 2999,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "electronics",
-  },
-  {
-    id: "2",
-    name: "Men's Casual T-Shirt",
-    description: "Comfortable cotton t-shirt for everyday wear.",
-    price: 499,
-    mrp: 999,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "clothing",
-  },
-  {
-    id: "3",
-    name: "Smart LED TV 43-inch",
-    description: "Full HD display with smart features and multiple connectivity options.",
-    price: 24999,
-    mrp: 32999,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "electronics",
-  },
-  {
-    id: "4",
-    name: "Non-Stick Cookware Set",
-    description: "Complete set of non-stick pans and pots for your kitchen.",
-    price: 1999,
-    mrp: 3499,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "home",
-  },
-  {
-    id: "5",
-    name: "Women's Running Shoes",
-    description: "Lightweight and comfortable shoes for running and workouts.",
-    price: 1299,
-    mrp: 2499,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "clothing",
-  },
-  {
-    id: "6",
-    name: "Moisturizing Face Cream",
-    description: "Hydrating face cream for all skin types.",
-    price: 399,
-    mrp: 599,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "beauty",
-  },
-  {
-    id: "7",
-    name: "Stainless Steel Water Bottle",
-    description: "Insulated bottle that keeps your drinks hot or cold for hours.",
-    price: 699,
-    mrp: 999,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "home",
-  },
-  {
-    id: "8",
-    name: "Smartphone Stand and Holder",
-    description: "Adjustable stand for your smartphone or tablet.",
-    price: 299,
-    mrp: 499,
-    image: "/placeholder.svg?height=300&width=300",
-    category: "electronics",
-  },
-]
-
-// Categories
-const categories = [
-  { id: "electronics", name: "Electronics" },
-  { id: "clothing", name: "Clothing" },
-  { id: "home", name: "Home & Kitchen" },
-  { id: "beauty", name: "Beauty" },
-]
+import useCategory from "../../../hooks/useCategory"
 
 // Price ranges
 const priceRanges = [
@@ -103,25 +20,30 @@ const priceRanges = [
 
 // Special categories for price filters
 const priceCategories = {
+  "under-100": { min: 0, max: 100 },
   "under-200": { min: 0, max: 200 },
   "under-300": { min: 0, max: 300 },
   "under-500": { min: 0, max: 500 },
-  "under-1000": { min: 0, max: 1000 },
 }
 
 export default function CategoryPage({ params }: { params: { slug: string } }) {
+  const {
+    categoryData,
+    loading,
+    productData
+  } = useCategory();
   const { slug } = params
   const [searchQuery, setSearchQuery] = useState("")
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000])
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000])
   const [sortBy, setSortBy] = useState("featured")
-  const [filteredProducts, setFilteredProducts] = useState<typeof allProducts>([])
+  const [filteredProducts, setFilteredProducts] = useState<typeof productData>([])
   const [categoryName, setCategoryName] = useState("")
 
   useEffect(() => {
     // Set initial category name
-    const category = categories.find((cat) => cat.id === slug)
+    const category: any = categoryData?.find((cat: any) => cat?._id === slug)
     if (category) {
-      setCategoryName(category.name)
+      setCategoryName(category?.name)
     } else if (slug.startsWith("under-")) {
       setCategoryName(`Products ${slug.replace("-", " ₹")}`)
     } else {
@@ -136,48 +58,48 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 
     // Initial filtering
     filterProducts()
-  }, [slug])
+  }, [slug, categoryData])
 
   // Filter products based on category, search, and price range
   const filterProducts = () => {
-    let filtered = allProducts
+    let filtered = productData
 
     // Filter by category
     if (slug in priceCategories) {
       const { min, max } = priceCategories[slug as keyof typeof priceCategories]
-      filtered = filtered.filter((product) => product.price >= min && product.price <= max)
-    } else if (categories.some((cat) => cat.id === slug)) {
-      filtered = filtered.filter((product) => product.category === slug)
+      filtered = filtered?.filter((product) => product?.price >= min && product?.price <= max)
+    } else if (categoryData?.some((cat: any) => cat?._id === slug)) {
+      filtered = filtered.filter((product) => product?.categoryId === slug)
     }
 
     // Filter by search query
     if (searchQuery) {
-      filtered = filtered.filter(
+      filtered = filtered?.filter(
         (product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchQuery.toLowerCase()),
+          product?.name?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
+          product?.description?.toLowerCase()?.includes(searchQuery.toLowerCase()),
       )
     }
 
     // Filter by price range
-    filtered = filtered.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1])
+    filtered = filtered?.filter((product) => product?.price >= priceRange[0] && product?.price <= priceRange[1])
 
     // Sort products
     switch (sortBy) {
       case "price-low-high":
-        filtered = filtered.sort((a, b) => a.price - b.price)
+        filtered = filtered?.sort((a, b) => a?.price - b?.price)
         break
       case "price-high-low":
-        filtered = filtered.sort((a, b) => b.price - a.price)
+        filtered = filtered?.sort((a, b) => b?.price - a?.price)
         break
       case "newest":
-        filtered = filtered.sort((a, b) => Number.parseInt(b.id) - Number.parseInt(a.id))
+        filtered = filtered?.sort((a, b) => Number.parseInt(b?._id) - Number.parseInt(a?._id))
         break
       case "discount":
-        filtered = filtered.sort((a, b) => (b.mrp - b.price) / b.mrp - (a.mrp - a.price) / a.mrp)
+        filtered = filtered?.sort((a, b) => (b?.mrp - b?.price) / b?.mrp - (a?.mrp - a?.price) / a?.mrp)
         break
       default: // featured
-        filtered = filtered.sort((a, b) => Number.parseInt(a.id) - Number.parseInt(b.id))
+        filtered = filtered?.sort((a, b) => Number.parseInt(a?._id) - Number.parseInt(b?._id))
     }
 
     setFilteredProducts(filtered)
@@ -191,6 +113,14 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
   // Apply filters when search, price range, or sort changes
   const applyFilters = () => {
     filterProducts()
+  }
+
+  useEffect(() => {
+    filterProducts();
+  }, [productData])
+
+  if (loading) {
+    return <CategoryPageSkeleton />
   }
 
   return (
@@ -207,7 +137,7 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
                 type="search"
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: any) => setSearchQuery(e.target.value)}
               />
               <Button onClick={applyFilters}>Search</Button>
             </div>
@@ -224,11 +154,11 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
                       <span>₹{priceRange[1].toLocaleString()}</span>
                     </div>
                     <Slider
-                      defaultValue={[0, 50000]}
-                      max={50000}
+                      defaultValue={[0, 5000]}
+                      max={5000}
                       step={100}
                       value={priceRange}
-                      onValueChange={(value) => setPriceRange(value as [number, number])}
+                      onValueChange={(value: any) => setPriceRange(value as [number, number])}
                     />
                     <div className="space-y-2 pt-2">
                       {priceRanges.map((range) => (
@@ -257,12 +187,12 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
         {/* Products Grid */}
         <div>
           <div className="mb-6 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Showing {filteredProducts.length} products</span>
+            <span className="text-sm text-muted-foreground">Showing {filteredProducts?.length} products</span>
             <div className="flex items-center gap-2">
               <span className="text-sm">Sort by:</span>
               <Select
                 value={sortBy}
-                onValueChange={(value) => {
+                onValueChange={(value: any) => {
                   setSortBy(value)
                   setTimeout(applyFilters, 0)
                 }}
@@ -282,8 +212,8 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
           </div>
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+            {filteredProducts.map((product, index) => (
+              <ProductCard key={index} {...product} />
             ))}
           </div>
 
@@ -297,5 +227,69 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
       </div>
     </div>
   )
+}
+
+function CategoryPageSkeleton() {
+  return (
+    <div className="w-full px-4 py-8 md:px-6 md:py-12">
+      {/* Page Title Skeleton */}
+      <div className="mb-8 h-8 w-1/3 bg-muted animate-pulse rounded-md"></div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
+        {/* Filters Sidebar Skeleton */}
+        <div className="space-y-6">
+          {/* Search Box Skeleton */}
+          <div>
+            <div className="mb-4 h-6 w-24 bg-muted animate-pulse rounded-md"></div>
+            <div className="flex gap-2">
+              <div className="h-10 w-full bg-muted animate-pulse rounded-md"></div>
+              <div className="h-10 w-24 bg-muted animate-pulse rounded-md"></div>
+            </div>
+          </div>
+
+          {/* Filters Skeleton */}
+          <div className="space-y-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="space-y-3">
+                <div className="h-6 w-32 bg-muted animate-pulse rounded-md"></div>
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div key={j} className="flex items-center gap-2">
+                      <div className="h-4 w-4 bg-muted animate-pulse rounded-sm"></div>
+                      <div className="h-4 w-20 bg-muted animate-pulse rounded-md"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Apply Filters Button Skeleton */}
+          <div className="h-10 w-full bg-muted animate-pulse rounded-md"></div>
+        </div>
+
+        {/* Products Grid Skeleton */}
+        <div>
+          {/* Sorting & Product Count Skeleton */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="h-4 w-32 bg-muted animate-pulse rounded-md"></div>
+            <div className="h-8 w-48 bg-muted animate-pulse rounded-md"></div>
+          </div>
+
+          {/* Product Cards Skeleton */}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {[...Array(8)].map((_, index) => (
+              <div key={index} className="rounded-lg border p-4 animate-pulse">
+                <div className="aspect-square w-full bg-muted" />
+                <div className="mt-4 h-6 w-3/4 bg-muted" />
+                <div className="mt-2 h-4 w-full bg-muted" />
+                <div className="mt-2 h-4 w-1/2 bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 

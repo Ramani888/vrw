@@ -97,7 +97,7 @@ export default function WalletPage() {
   const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
-    <div className="w-full px-4 py-8 md:px-6 md:py-12">
+    <div className="container px-4 py-8 md:px-6 md:py-12">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">My Wallet</h1>
         <Link href="/account">
@@ -259,4 +259,3 @@ export default function WalletPage() {
     </div>
   )
 }
-

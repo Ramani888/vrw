@@ -1,32 +1,25 @@
+"use client";
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
-
-// Mock data for categories
-const categories = [
-  { name: "Electronics", slug: "electronics", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Clothing", slug: "clothing", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Home & Kitchen", slug: "home", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Beauty", slug: "beauty", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Toys", slug: "toys", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Sports", slug: "sports", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Books", slug: "books", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Grocery", slug: "grocery", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Jewelry", slug: "jewelry", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Furniture", slug: "furniture", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Automotive", slug: "automotive", image: "/placeholder.svg?height=200&width=200" },
-  { name: "Health", slug: "health", image: "/placeholder.svg?height=200&width=200" },
-]
+import useCategory from "../../hooks/useCategory"
 
 // Price categories
 const priceCategories = [
+  { name: "Under ₹100", slug: "under-100", image: "/placeholder.svg?height=200&width=200&text=Under+₹100" },
   { name: "Under ₹200", slug: "under-200", image: "/placeholder.svg?height=200&width=200&text=Under+₹200" },
   { name: "Under ₹300", slug: "under-300", image: "/placeholder.svg?height=200&width=200&text=Under+₹300" },
   { name: "Under ₹500", slug: "under-500", image: "/placeholder.svg?height=200&width=200&text=Under+₹500" },
-  { name: "Under ₹1000", slug: "under-1000", image: "/placeholder.svg?height=200&width=200&text=Under+₹1000" },
 ]
 
 export default function CategoriesPage() {
+  const {
+    loading,
+    categoryData
+  } = useCategory();
+
+  if (loading) return <CategoriesPageSkeleton />
+
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12">
       <h1 className="mb-8 text-3xl font-bold">All Categories</h1>
@@ -58,15 +51,15 @@ export default function CategoriesPage() {
 
       <h2 className="mb-4 text-xl font-semibold">Shop by Category</h2>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {categories.map((category) => (
-          <Link key={category.slug} href={`/category/${category.slug}`}>
+        {categoryData?.map((category: any, index) => (
+          <Link key={index} href={`/category/${category?._id}`}>
             <Card className="overflow-hidden transition-all hover:shadow-md">
               <CardContent className="p-0">
                 <div className="relative aspect-square">
-                  <Image src={category.image || "/placeholder.svg"} alt={category.name} fill className="object-cover" />
+                  <Image src={category?.imagePath || "/placeholder.svg"} alt={category?.name} fill className="object-cover" />
                 </div>
                 <div className="p-3 text-center">
-                  <h3 className="font-medium">{category.name}</h3>
+                  <h3 className="font-medium">{category?.name}</h3>
                 </div>
               </CardContent>
             </Card>
@@ -75,5 +68,35 @@ export default function CategoriesPage() {
       </div>
     </div>
   )
+}
+
+function CategoriesPageSkeleton() {
+  return (
+    <div className="w-full px-4 py-8 md:px-6 md:py-12">
+      {/* Page Title Skeleton */}
+      <div className="mb-8 h-8 w-48 bg-muted animate-pulse rounded-md"></div>
+
+      {/* Shop by Price Skeleton */}
+      <div className="mb-10">
+        <div className="mb-4 h-6 w-40 bg-muted animate-pulse rounded-md"></div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="h-70 bg-muted animate-pulse rounded-md"></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Shop by Category Skeleton */}
+      <div className="mb-4 h-6 w-40 bg-muted animate-pulse rounded-md"></div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        {[...Array(6)].map((_, index) => (
+          <div key={index} className="rounded-lg border p-4 animate-pulse">
+            <div className="aspect-square w-full bg-muted rounded-md"></div>
+            <div className="mt-4 h-6 w-3/4 bg-muted rounded-md"></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 

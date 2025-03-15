@@ -121,7 +121,7 @@ export default function CheckoutPage() {
   // If cart is empty, redirect to cart page
   if (cart.length === 0) {
     return (
-      <div className="w-full px-4 py-8 md:px-6 md:py-12">
+      <div className="container px-4 py-8 md:px-6 md:py-12">
         <div className="flex flex-col items-center justify-center py-12">
           <h2 className="text-xl font-medium">Your cart is empty</h2>
           <p className="mt-2 text-center text-muted-foreground">
@@ -136,7 +136,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="w-full px-4 py-8 md:px-6 md:py-12">
+    <div className="container px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8">
         <Link
           href="/cart"
@@ -342,8 +342,8 @@ export default function CheckoutPage() {
               <Separator className="my-4" />
 
               <div className="max-h-[300px] overflow-auto space-y-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                {cart.map((item, index) => (
+                  <div key={`${item.id}-${item.size}-${item.color}-${index}`} className="flex gap-4">
                     <div className="relative h-16 w-16 overflow-hidden rounded-md border">
                       <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
                     </div>
@@ -351,6 +351,14 @@ export default function CheckoutPage() {
                     <div className="flex flex-1 flex-col justify-between">
                       <div>
                         <p className="font-medium line-clamp-1">{item.name}</p>
+                        {/* Display size and color if available */}
+                        {(item.size || item.color) && (
+                          <div className="text-xs text-muted-foreground">
+                            {item.color && <span>Color: {item.color}</span>}
+                            {item.color && item.size && <span> | </span>}
+                            {item.size && <span>Size: {item.size}</span>}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <span>₹{item.price.toLocaleString()}</span>
                           <span className="text-sm text-muted-foreground">x {item.quantity}</span>
@@ -437,4 +445,3 @@ export default function CheckoutPage() {
     </div>
   )
 }
-
