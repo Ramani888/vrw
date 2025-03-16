@@ -61,19 +61,20 @@ export default function CheckoutPage() {
 
   // Load addresses from localStorage on client side
   useEffect(() => {
-    const savedAddresses = localStorage.getItem("addresses")
+    const savedAddresses = localStorage.getItem("addresses");
     if (savedAddresses) {
-      setAddresses(JSON.parse(savedAddresses))
+      const parsedAddresses = JSON.parse(savedAddresses);
+      setAddresses(parsedAddresses);
+  
+      // Set default address as selected
+      const defaultAddress = parsedAddresses.find((addr: any) => addr.isDefault);
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+      } else if (parsedAddresses.length > 0) {
+        setSelectedAddressId(parsedAddresses[0].id);
+      }
     }
-
-    // Set default address as selected
-    const defaultAddress = addresses.find((addr) => addr.isDefault)
-    if (defaultAddress) {
-      setSelectedAddressId(defaultAddress.id)
-    } else if (addresses.length > 0) {
-      setSelectedAddressId(addresses[0].id)
-    }
-  }, [])
+  }, []);
 
   // Calculate subtotal
   const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0)

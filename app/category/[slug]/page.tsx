@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
@@ -26,13 +26,14 @@ const priceCategories = {
   "under-500": { min: 0, max: 500 },
 }
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
+export default function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const {
     categoryData,
     loading,
     productData
   } = useCategory();
-  const { slug } = params
+  const { slug } = use(params);
+  // const { slug } = params
   const [searchQuery, setSearchQuery] = useState("")
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000])
   const [sortBy, setSortBy] = useState("featured")
@@ -58,6 +59,8 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 
     // Initial filtering
     filterProducts()
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, categoryData])
 
   // Filter products based on category, search, and price range
@@ -114,10 +117,6 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
   const applyFilters = () => {
     filterProducts()
   }
-
-  useEffect(() => {
-    filterProducts();
-  }, [productData])
 
   if (loading) {
     return <CategoryPageSkeleton />

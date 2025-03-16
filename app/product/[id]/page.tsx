@@ -67,7 +67,7 @@ type RelatedProduct = {
   category: string
 }
 
-export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductPage({ params }: { params: Promise<{ id?: string }> }) {
   const resolvedParams = React.use(params); // ✅ Unwrap the params Promise
   // const { id } = params;
   const {

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, use } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -177,8 +177,8 @@ const orders = {
   },
 }
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params
+export default function OrderDetailPage({params}: {params: Promise<{ id: string }>}) {
+  const { id } = use(params);
   const router = useRouter()
   const order = orders[id as keyof typeof orders]
   const [isDownloading, setIsDownloading] = useState(false)
