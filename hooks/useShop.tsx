@@ -1,13 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react'
-import { serverGetAllProduct, serverGetCategory, serverGetProductById } from '../services/serverApi';
+import { serverGetAllProduct, serverGetCategory } from '../services/serverApi';
 
-const useShop = (productId?: string) => {
-  console.log('productId', productId)
+const useShop = () => {
   const [loading, setLoading] = useState(false);
   const [productData, setProductData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState([]);
-  const [productDetail, setProductDetail] = useState<any>({});
 
   const getProductData = async () => {
     try {
@@ -35,36 +33,16 @@ const useShop = (productId?: string) => {
     }
   }
 
-  const getProductById = async () => {
-    try {
-      setLoading(true)
-      const res = await serverGetProductById(productId ?? '');
-      setProductDetail(res?.data[0])
-      setLoading(false)
-    }
-    catch (error) { 
-      console.error(error);
-      setProductDetail({})
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
     getProductData();
     getCategoryData();
   }, [])
 
-  useEffect(() => {
-    if (productId){
-      getProductById();
-    }
-  }, [productId])
 
   return {
     loading,
     productData,
-    categoryData,
-    productDetail
+    categoryData
   }
 }
 

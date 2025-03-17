@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, use } from "react"
 import Image from "next/image"
-import Link from "next/link"
-import { Heart, ShoppingCart, Star, Truck, Shield, RotateCcw, Check } from "lucide-react"
+import { Heart, ShoppingCart, Truck, Shield, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCart } from "@/components/cart-provider"
 import { Badge } from "@/components/ui/badge"
-import useShop from "@/hooks/useShop"
+import { Loader } from "@/components/ui/loader"
+import { serverGetProductByCategoryId, serverGetProductById } from "@/services/serverApi"
+import ProductCard from "@/components/product-card"
 
 // Enhanced product type with colors, sizes, and videos
 type ProductSize = string | number
@@ -67,18 +68,14 @@ type RelatedProduct = {
   category: string
 }
 
-export default function ProductPage({ params }: { params: Promise<{ id?: string }> }) {
-  const resolvedParams = React.use(params); // ✅ Unwrap the params Promise
-  // const { id } = params;
-  const {
-    loading,
-    productDetail
-  } = useShop(resolvedParams?.id);
-
-  const [error, setError] = useState<string | null>(null)
+export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  // const { id } = params
+  const [loading, setLoading] = useState(true);
+  const [productDetail, setProductDetail] = useState<any>({});
+  const [relatedProduct, setRelatedProduct] = useState<any>([]);
 
   const [quantity, setQuantity] = useState(1)
-  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -86,15 +83,37 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
   const { addToCart, addToWishlist, isInWishlist, isInCart } = useCart()
   const [isWishlisted, setIsWishlisted] = useState(false)
 
+  const getProductById = async () => {
+    try {
+      setLoading(true)
+      const res = await serverGetProductById(id ?? '');
+      const relatedProduct = await serverGetProductByCategoryId(res?.data?.[0]?.categoryId ?? '');
+      setRelatedProduct(relatedProduct?.data);
+      setProductDetail(res?.data[0])
+      setLoading(false)
+    }
+    catch (error) { 
+      console.error(error);
+      setProductDetail({})
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (id) {
+      getProductById();
+    }
+  }, [id])
+
   const handleAddToWishlist = () => {
     if (!productDetail) return
 
     addToWishlist({
-      id: productDetail?.id,
+      id: productDetail?._id,
       name: productDetail?.name,
       price: productDetail?.price,
       mrp: productDetail?.mrp,
-      image: productDetail?.image,
+      image: productDetail?.image[0]?.path,
     })
     setIsWishlisted(true)
   }
@@ -102,22 +121,22 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
   const handleAddToCart = () => {
     if (!productDetail) return
 
-    if (!selectedSize && productDetail?.sizes?.length > 0) {
+    if (!selectedSize && productDetail?.size?.length > 0) {
       alert("Please select a size")
       return
     }
 
-    if (!selectedColor && productDetail?.colors?.length > 0) {
-      alert("Please select a color")
-      return
-    }
+    // if (!selectedColor && productDetail?.color?.length > 0) {
+    //   alert("Please select a color")
+    //   return
+    // }
 
     addToCart({
-      id: productDetail?.id,
+      id: productDetail?._id,
       name: productDetail?.name,
       price: productDetail?.price,
       mrp: productDetail?.mrp,
-      image: productDetail?.image,
+      image: productDetail?.image?.[0]?.path,
       // @ts-ignore - We'll update the cart provider type later
       size: selectedSize,
       // @ts-ignore - We'll update the cart provider type later
@@ -150,29 +169,16 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
     return <ProductPageSkeleton />
   }
 
-  // If error, show error message
-  if (error || !productDetail) {
-    return (
-      <div className="container px-4 py-8 md:px-6 md:py-12">
-        <div className="flex flex-col items-center justify-center py-12">
-          <h2 className="text-xl font-medium text-destructive">Error</h2>
-          <p className="mt-2 text-center text-muted-foreground">
-            {error || "Product not found. Please try another product."}
-          </p>
-          <Link href="/shop">
-            <Button className="mt-6">Browse Products</Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   const discount = Math.round(((productDetail?.mrp - productDetail?.price) / productDetail?.mrp) * 100)
-  const currentMedia = [...productDetail?.image, {path: productDetail?.videoPath, isVideo: true}]?.[currentImageIndex];
-  const isVideo = currentMedia?.isVideo;
+  const imagesWithVideo = [
+    ...productDetail?.image,
+    ...(productDetail?.videoPath ? [{ path: productDetail.videoPath, isVideo: true }] : []),
+  ];
+  const currentMedia = imagesWithVideo[currentImageIndex];
+  const isVideo = currentMedia?.isVideo
 
   return (
-    <div className="container px-4 py-8 md:px-6 md:py-12">
+    <div className="w-full px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2">
         {/* Product Images/Videos */}
         <div className="md:sticky md:top-20">
@@ -195,7 +201,7 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
             )}
           </div>
           <div className="mt-4 grid grid-cols-4 gap-2">
-            {[...productDetail?.image, {path: productDetail?.videoPath, isVideo: true}]?.map((image: any, index: number) => (
+            {imagesWithVideo?.map((image, index) => (
               <div
                 key={index}
                 className={`relative aspect-square overflow-hidden rounded-md border cursor-pointer ${
@@ -225,18 +231,6 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">{productDetail?.name}</h1>
 
-          <div className="mt-2 flex items-center gap-2">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`h-5 w-5 ${star <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"}`}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-muted-foreground">({productDetail?.reviews?.length} reviews)</span>
-          </div>
-
           <div className="mt-4">
             <p className="text-muted-foreground">{productDetail?.description}</p>
           </div>
@@ -255,49 +249,36 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
 
           <div className="mt-6 space-y-4">
             {/* Color Selection */}
-            {productDetail?.colors?.length > 0 && (
-              <div>
-                <h3 className="mb-2 font-medium">Color: {selectedColor?.name}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {productDetail?.colors?.map((color: any) => (
-                    <div
-                      key={color?.name}
-                      className={`relative h-10 w-10 cursor-pointer rounded-full border-2 ${
-                        selectedColor?.name === color?.name ? "border-primary" : "border-muted"
-                      }`}
-                      style={{ backgroundColor: color?.code }}
-                      onClick={() => setSelectedColor(color)}
-                    >
-                      {selectedColor?.name === color?.name && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Check className={`h-5 w-5 ${color?.name === "White" ? "text-black" : "text-white"}`} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+            <div>
+              <h3 className="mb-2 font-medium">Color: {productDetail?.productColorName}</h3>
+              <div className="flex flex-wrap gap-2">
+                  <div
+                    className={`relative h-10 w-10 cursor-pointer rounded-full border-2 border-muted`}
+                    style={{ backgroundColor: productDetail?.productColorCode }}
+                  >
+                  </div>
               </div>
-            )}
+            </div>
 
             {/* Size Selection */}
-            {productDetail?.sizes?.length > 0 && productDetail?.sizes[0] !== "Free Size" && (
+            {productDetail?.size?.length > 0 && productDetail?.size?.[0] !== "Free Size" && (
               <div>
                 <div className="flex justify-between">
                   <h3 className="mb-2 font-medium">Size</h3>
                   <button className="text-sm text-primary">Size Guide</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {productDetail?.sizes?.map((size: any) => (
+                  {productDetail?.size?.map((sizeItem: any) => (
                     <div
-                      key={size.toString()}
+                      key={sizeItem?.toString()}
                       className={`flex h-10 min-w-[2.5rem] cursor-pointer items-center justify-center rounded-md border px-3 ${
-                        selectedSize === size
+                        selectedSize === sizeItem
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-input hover:border-primary"
                       }`}
-                      onClick={() => setSelectedSize(size)}
+                      onClick={() => setSelectedSize(sizeItem)}
                     >
-                      {size}
+                      {sizeItem}
                     </div>
                   ))}
                 </div>
@@ -305,7 +286,7 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
             )}
 
             {/* Free Size Badge */}
-            {productDetail?.sizes?.length === 1 && productDetail?.sizes[0] === "Free Size" && (
+            {productDetail?.size?.length === 1 && productDetail?.size?.[0] === "Free Size" && (
               <div className="flex items-center">
                 <Badge variant="outline" className="mr-2">
                   Free Size
@@ -315,14 +296,16 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
             )}
 
             {/* Product Details */}
-            {/* <div className="grid grid-cols-2 gap-4 text-sm">
-              {Object.entries(productDetail?.details).map(([key, value]: any) => (
-                <div key={key}>
-                  <span className="text-muted-foreground">{key}: </span>
-                  <span className="font-medium">{value}</span>
-                </div>
-              ))}
-            </div> */}
+            <div className="grid grid-cols-1 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Brand: </span>
+                <span className="font-medium">{productDetail?.productBrandName ?? 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Code: </span>
+                <span className="font-medium">{productDetail?.code ?? 'N/A'}</span>
+              </div>
+            </div>
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-4">
@@ -349,8 +332,8 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
               <Button
                 className="flex-1"
                 onClick={handleAddToCart}
-                variant={isInCart(productDetail?.id) ? "secondary" : "default"}
-                disabled={productDetail?.sizes?.length > 0 && productDetail?.sizes[0] !== "Free Size" && !selectedSize}
+                variant={isInCart(productDetail?._id) ? "secondary" : "default"}
+                disabled={productDetail?.size?.length > 0 && productDetail?.size?.[0] !== "Free Size" && !selectedSize}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 {isInCart(productDetail?._id) ? "Added to Cart" : "Add to Cart"}
@@ -362,25 +345,9 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
             </div>
 
             {/* Size selection warning */}
-            {productDetail?.sizes?.length > 0 && productDetail?.sizes[0] !== "Free Size" && !selectedSize && (
+            {productDetail?.size?.length > 0 && productDetail?.size?.[0] !== "Free Size" && !selectedSize && (
               <div className="text-sm text-amber-600">Please select a size to add this product to your cart</div>
             )}
-
-            {/* Delivery and Returns */}
-            <div className="space-y-2 rounded-lg border p-4">
-              <div className="flex items-center gap-2">
-                <Truck className="h-5 w-5 text-muted-foreground" />
-                <span>Free delivery on orders over ₹500</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-muted-foreground" />
-                <span>1 Year warranty</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <RotateCcw className="h-5 w-5 text-muted-foreground" />
-                <span>30 days return policy</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -390,91 +357,74 @@ export default function ProductPage({ params }: { params: Promise<{ id?: string 
         <Tabs defaultValue="specifications">
           <TabsList className="w-full justify-start">
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger value="description">Description</TabsTrigger>
           </TabsList>
           <TabsContent value="specifications" className="mt-4">
             <div className="rounded-lg border">
               <table className="w-full">
                 <tbody>
-                  {/* {productDetail?.specifications.map((spec: any, index: number) => (
-                    <tr key={index} className={index % 2 === 0 ? "bg-muted/50" : ""}>
-                      <td className="px-4 py-3 font-medium">{spec.name}</td>
-                      <td className="px-4 py-3">{spec.value}</td>
-                    </tr>
-                  ))} */}
+                  <tr className="bg-muted/50">
+                    <td className="px-4 py-3 font-medium">Code</td>
+                    <td className="px-4 py-3">{productDetail?.code ?? 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium">Base Metal</td>
+                    <td className="px-4 py-3">{productDetail?.productBaseMetalName ?? 'N/A'}</td>
+                  </tr>
+                  <tr className="bg-muted/50">
+                    <td className="px-4 py-3 font-medium">Brand</td>
+                    <td className="px-4 py-3">{productDetail?.productBrandName ?? 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium">Color</td>
+                    <td className="px-4 py-3">{productDetail?.productColorName ?? 'N/A'}</td>
+                  </tr>
+                  <tr className="bg-muted/50">
+                    <td className="px-4 py-3 font-medium">Occasion</td>
+                    <td className="px-4 py-3">{productDetail?.productOccasionName ?? 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium">Plating</td>
+                    <td className="px-4 py-3">{productDetail?.productPlatingName ?? 'N/A'}</td>
+                  </tr>
+                  <tr className="bg-muted/50">
+                    <td className="px-4 py-3 font-medium">Stone Type</td>
+                    <td className="px-4 py-3">{productDetail?.productStoneTypeName ?? 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium">Trend</td>
+                    <td className="px-4 py-3">{productDetail?.productTrendName ?? 'N/A'}</td>
+                  </tr>
+                  <tr className="bg-muted/50">
+                    <td className="px-4 py-3 font-medium">Weight</td>
+                    <td className="px-4 py-3">{productDetail?.weight ?? 'N/A'}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </TabsContent>
-          <TabsContent value="reviews" className="mt-4">
+          <TabsContent value="description" className="mt-4">
             <div className="space-y-4">
-              {productDetail?.reviews?.map((review: any) => (
-                <div key={review.id} className="rounded-lg border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{review.user}</span>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-4 w-4 ${
-                            star <= review.rating ? "fill-primary text-primary" : "fill-muted text-muted"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm">{review.comment}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{review.date}</p>
-                </div>
-              ))}
+              <div className="rounded-lg border p-4">
+                <p className="text-sm">{productDetail?.description}</p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
       </div>
 
       {/* Related Products */}
-      {/* <div className="mt-12">
+      <div className="mt-12">
         <h2 className="mb-6 text-2xl font-bold">Related Products</h2>
-        {relatedProducts.length === 0 ? (
+        {relatedProduct?.length === 0 ? (
           <Loader text="Loading related products..." />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {relatedProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+            {relatedProduct?.map((product: any) => (
+              <ProductCard key={product?._id ?? ''} {...product} />
             ))}
           </div>
         )}
-      </div> */}
-    </div>
-  )
-}
-
-// ProductCard component for related products
-function ProductCard({ id, name, description, price, mrp, image, category }: RelatedProduct) {
-  return (
-    <div className="group relative overflow-hidden rounded-lg border bg-background transition-all hover:shadow-md">
-      <div className="relative">
-        <Link href={`/product/${id}`} className="block overflow-hidden">
-          <div className="aspect-square overflow-hidden">
-            <Image
-              src={image || "/placeholder.svg"}
-              alt={name}
-              width={300}
-              height={300}
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
-            />
-          </div>
-        </Link>
-      </div>
-
-      <div className="p-4">
-        <h3 className="font-medium line-clamp-1">{name}</h3>
-        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{description}</p>
-
-        <div className="mt-2 flex items-center gap-2">
-          <span className="font-medium">₹{price.toLocaleString()}</span>
-          {mrp > price && <span className="text-sm text-muted-foreground line-through">₹{mrp.toLocaleString()}</span>}
-        </div>
       </div>
     </div>
   )
@@ -483,7 +433,7 @@ function ProductCard({ id, name, description, price, mrp, image, category }: Rel
 // Product Page Skeleton
 function ProductPageSkeleton() {
   return (
-    <div className="container px-4 py-8 md:px-6 md:py-12">
+    <div className="w-full px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2">
         {/* Product Image Skeleton */}
         <div>
@@ -557,159 +507,4 @@ function ProductPageSkeleton() {
       </div>
     </div>
   )
-}
-
-// Mock data functions
-function getMockProduct(id: string): Product {
-  const products: Product[] = [
-    {
-      id: "1",
-      name: "Wireless Bluetooth Earbuds",
-      description: "High-quality sound with noise cancellation and long battery life.",
-      price: 1499,
-      mrp: 2999,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "electronics",
-      images: [
-        { url: "/placeholder.svg?height=600&width=600&text=Image+1", alt: "Earbuds front view" },
-        { url: "/placeholder.svg?height=600&width=600&text=Image+2", alt: "Earbuds side view" },
-        { url: "/placeholder.svg?height=600&width=600&text=Image+3", alt: "Earbuds in case" },
-        {
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-          alt: "Product video",
-          isVideo: true,
-        },
-      ],
-      colors: [
-        { name: "Black", code: "#000000" },
-        { name: "White", code: "#FFFFFF" },
-        { name: "Blue", code: "#0000FF" },
-      ],
-      sizes: ["Free Size"],
-      details: {
-        brand: "SoundTech",
-        model: "BT-500",
-        color: "Black",
-        connectivity: "Bluetooth 5.0",
-        batteryLife: "Up to 20 hours",
-        warranty: "1 Year",
-      },
-      specifications: [
-        { name: "Bluetooth Version", value: "5.0" },
-        { name: "Battery Life", value: "Up to 20 hours" },
-        { name: "Charging Time", value: "1.5 hours" },
-        { name: "Water Resistance", value: "IPX4" },
-        { name: "Noise Cancellation", value: "Yes" },
-        { name: "Microphone", value: "Built-in" },
-        { name: "Weight", value: "45g" },
-      ],
-      reviews: [
-        {
-          id: 1,
-          user: "John D.",
-          rating: 5,
-          comment: "Great sound quality and comfortable to wear.",
-          date: "2023-05-10",
-        },
-        {
-          id: 2,
-          user: "Sarah M.",
-          rating: 4,
-          comment: "Good battery life but takes time to charge.",
-          date: "2023-04-28",
-        },
-        { id: 3, user: "Mike P.", rating: 5, comment: "Excellent noise cancellation feature.", date: "2023-04-15" },
-      ],
-    },
-    {
-      id: "2",
-      name: "Running Shoes",
-      description: "Lightweight and comfortable shoes for running and workouts.",
-      price: 1299,
-      mrp: 2499,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "footwear",
-      images: [
-        { url: "/placeholder.svg?height=600&width=600&text=Shoes+Front", alt: "Shoes front view" },
-        { url: "/placeholder.svg?height=600&width=600&text=Shoes+Side", alt: "Shoes side view" },
-        { url: "/placeholder.svg?height=600&width=600&text=Shoes+Back", alt: "Shoes back view" },
-        {
-          url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-          alt: "Shoes video",
-          isVideo: true,
-        },
-      ],
-      colors: [
-        { name: "Black", code: "#000000" },
-        { name: "White", code: "#FFFFFF" },
-        { name: "Red", code: "#FF0000" },
-      ],
-      sizes: [2.3, 2.4, 2.5, 2.6, 2.7, 2.8],
-      details: {
-        brand: "SportFit",
-        model: "Runner Pro",
-        material: "Mesh and synthetic",
-        soleMaterial: "Rubber",
-        closure: "Lace-up",
-        warranty: "6 Months",
-      },
-      specifications: [
-        { name: "Upper Material", value: "Breathable mesh" },
-        { name: "Sole Material", value: "Rubber" },
-        { name: "Closure Type", value: "Lace-up" },
-        { name: "Arch Type", value: "Neutral" },
-        { name: "Weight", value: "280g (per shoe)" },
-        { name: "Terrain", value: "Road, Track" },
-        { name: "Waterproof", value: "No" },
-      ],
-      reviews: [
-        { id: 1, user: "Alex K.", rating: 5, comment: "Very comfortable for long runs.", date: "2023-05-15" },
-        { id: 2, user: "Jessica T.", rating: 4, comment: "Good grip but runs slightly small.", date: "2023-05-02" },
-        { id: 3, user: "David R.", rating: 5, comment: "Excellent cushioning and support.", date: "2023-04-20" },
-      ],
-    },
-  ]
-
-  return products.find((p) => p.id === id) || products[0]
-}
-
-function getMockRelatedProducts(): RelatedProduct[] {
-  return [
-    {
-      id: "3",
-      name: "Smart LED TV 43-inch",
-      description: "Full HD display with smart features and multiple connectivity options.",
-      price: 24999,
-      mrp: 32999,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "electronics",
-    },
-    {
-      id: "8",
-      name: "Smartphone Stand and Holder",
-      description: "Adjustable stand for your smartphone or tablet.",
-      price: 299,
-      mrp: 499,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "electronics",
-    },
-    {
-      id: "9",
-      name: "Wireless Charging Pad",
-      description: "Fast wireless charging for compatible devices.",
-      price: 999,
-      mrp: 1499,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "electronics",
-    },
-    {
-      id: "10",
-      name: "Bluetooth Speaker",
-      description: "Portable speaker with rich sound and long battery life.",
-      price: 1999,
-      mrp: 2999,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "electronics",
-    },
-  ]
 }
