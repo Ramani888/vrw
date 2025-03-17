@@ -29,15 +29,21 @@ export default function CategoriesPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {priceCategories.map((category) => (
             <Link key={category.slug} href={`/category/${category.slug}`}>
-              <Card className="overflow-hidden transition-all hover:shadow-md">
+              <Card className="overflow-hidden transition-all hover:shadow-md"
+                style={{
+                  backgroundImage: `url(background4.jpg)`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
                 <CardContent className="p-0">
                   <div className="relative aspect-square">
-                    <Image
+                    {/* <Image
                       src={category.image || "/placeholder.svg"}
                       alt={category.name}
                       fill
                       className="object-cover"
-                    />
+                    /> */}
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                       <h3 className="text-center text-lg font-bold text-white">{category.name}</h3>
                     </div>
