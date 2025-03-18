@@ -118,6 +118,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     filterProducts()
   }
 
+  useEffect(() => {
+    filterProducts();
+  }, [productData])
+
+  useEffect(() => {
+    applyFilters();
+  }, [searchQuery])
+
   if (loading) {
     return <CategoryPageSkeleton />
   }
@@ -138,7 +146,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 value={searchQuery}
                 onChange={(e: any) => setSearchQuery(e.target.value)}
               />
-              <Button onClick={applyFilters}>Search</Button>
+              {/* <Button onClick={applyFilters}>Search</Button> */}
             </div>
           </div>
 

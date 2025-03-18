@@ -97,7 +97,9 @@ export default function ShopPage() {
     setFilteredProducts(productData);
   }, [productData])
 
-  console.log('filteredProducts', filteredProducts)
+  useEffect(() => {
+    applyFilters();
+  }, [searchQuery])
 
   if (loading) {
     return <ShopPageSkeleton />
@@ -119,12 +121,12 @@ export default function ShopPage() {
                 value={searchQuery}
                 onChange={(e: any) => setSearchQuery(e.target.value)}
               />
-              <Button onClick={applyFilters}>Search</Button>
+              {/* <Button onClick={applyFilters}>Search</Button> */}
             </div>
           </div>
 
           <div>
-            <Accordion type="single" collapsible defaultValue="categories">
+            <Accordion type="multiple" defaultValue={["categories"]}>
               <AccordionItem value="categories">
                 <AccordionTrigger>Categories</AccordionTrigger>
                 <AccordionContent>
