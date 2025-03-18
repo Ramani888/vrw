@@ -140,7 +140,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       // @ts-ignore - We'll update the cart provider type later
       size: selectedSize,
       // @ts-ignore - We'll update the cart provider type later
-      color: selectedColor?.name,
+      // color: selectedColor?.name,
     })
   }
 
@@ -163,6 +163,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       videoRef.current.pause()
     }
   }
+
+  useEffect(() => {
+    if (productDetail && productDetail?.size?.length === 1 && productDetail?.size?.[0] === "Free Size") {
+      setSelectedSize(productDetail?.size?.[0] ?? null)
+    }
+  }, [productDetail])
 
   // If loading, show loader
   if (loading) {

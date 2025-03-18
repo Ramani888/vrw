@@ -1,127 +1,146 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
+import { Loader } from "@/components/ui/loader"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Eye, EyeOff } from "lucide-react"
+
+// Form validation schema
+const loginSchema = z.object({
+  mobile: z
+    .string()
+    .min(10, { message: "Mobile number must be at least 10 digits" })
+    .max(15, { message: "Mobile number must not exceed 15 digits" })
+    .regex(/^\d+$/, { message: "Mobile number must contain only digits" }),
+  password: z.string().min(1, { message: "Password is required" }),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, you would handle authentication here
-    console.log({ email, password, rememberMe })
-    router.push("/")
+  // Initialize form
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      mobile: "",
+      password: "",
+    },
+  })
+
+  // Handle form submission
+  const onSubmit = async (data: LoginFormValues) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Simulate API call with timeout
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // In a real app, you would send the data to your API
+      // const response = await fetch('/api/auth/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(data),
+      // })
+      // const result = await response.json()
+      // if (!response.ok) throw new Error(result.message || 'Login failed')
+
+      console.log("Login successful", data)
+
+      // Redirect to home page after successful login
+      router.push("/")
+    } catch (err) {
+      console.error("Login error:", err)
+      setError(err instanceof Error ? err.message : "Invalid mobile number or password. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="w-full flex flex-col items-center justify-center px-4 py-12 md:py-24">
-      <div className="mx-auto w-full max-w-md space-y-6">
-        <div className="text-center">
+    <div className="w-full flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center py-8 md:py-12">
+      <div className="mx-auto w-full max-w-md space-y-6 rounded-lg border bg-card p-6 shadow-sm">
+        <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">Welcome Back</h1>
-          <p className="mt-2 text-muted-foreground">Sign in to your account to continue</p>
+          <p className="text-muted-foreground">Sign in to your account</p>
         </div>
 
-        <div className="rounded-lg border p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+        {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="mobile"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobile Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="9876543210" type="tel" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input placeholder="••••••••" type={showPassword ? "text" : "password"} {...field} />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex items-center justify-end">
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked === true)}
-              />
-              <Label htmlFor="remember" className="text-sm font-normal">
-                Remember me
-              </Label>
-            </div>
-
-            <Button type="submit" className="w-full">
-              Sign In
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader size="sm" className="mr-2" /> : null}
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
+        </Form>
 
-          <div className="mt-6 flex items-center justify-center">
-            <span className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
-                Sign up
-              </Link>
-            </span>
-          </div>
-
-          <div className="relative mt-6">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <Button variant="outline" className="w-full">
-              Google
-            </Button>
-            <Button variant="outline" className="w-full">
-              Facebook
-            </Button>
-          </div>
+        <div className="text-center text-sm">
+          Don't have an account?{" "}
+          <Link href="/signup" className="font-medium text-primary hover:underline">
+            Sign up
+          </Link>
         </div>
       </div>
     </div>
   )
 }
-
