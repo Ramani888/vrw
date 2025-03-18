@@ -10,8 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { User, Package, Heart, MapPin, CreditCard, LogOut } from "lucide-react"
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation"
 
 export default function AccountPage() {
+  const router = useRouter()
   const [user, setUser] = useState({
     name: "John Doe",
     email: "john.doe@example.com",
@@ -22,6 +25,12 @@ export default function AccountPage() {
     e.preventDefault()
     // In a real app, you would update the user profile here
     alert("Profile updated successfully!")
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    Cookies.remove("auth-token");
+    router.push("/"); 
   }
 
   return (
@@ -76,7 +85,7 @@ export default function AccountPage() {
                 Payment Methods
               </Button>
             </Link>
-            <Button variant="ghost" className="w-full justify-start" size="sm">
+            <Button variant="ghost" className="w-full justify-start" size="sm" onClick={() => handleLogout()}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>

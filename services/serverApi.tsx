@@ -70,6 +70,11 @@ export const serverAdminLogin = async (data: {email: string, password: string}) 
   return res
 }
 
+export const serverLogin = async (data: {mobileNumber: number, password: string}) => {
+  const res = await serverRequest("/login", "POST", data, true);
+  return res;
+};
+
 //////////  Banner Api //////////
 export const serverGetBanners = async () => {
   const res = await serverRequest("/banner", "GET", null, true);

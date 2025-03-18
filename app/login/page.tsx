@@ -11,13 +11,15 @@ import { Input } from "@/components/ui/input"
 import { Loader } from "@/components/ui/loader"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Eye, EyeOff } from "lucide-react"
+import { serverLogin } from "@/services/serverApi"
+import Cookies from "js-cookie";
 
 // Form validation schema
 const loginSchema = z.object({
-  mobile: z
+  mobileNumber: z
     .string()
     .min(10, { message: "Mobile number must be at least 10 digits" })
-    .max(15, { message: "Mobile number must not exceed 15 digits" })
+    .max(15, { message: "Mobile number must not exceed 10 digits" })
     .regex(/^\d+$/, { message: "Mobile number must contain only digits" }),
   password: z.string().min(1, { message: "Password is required" }),
 })
@@ -34,7 +36,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      mobile: "",
+      mobileNumber: "",
       password: "",
     },
   })
@@ -45,8 +47,15 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      const res = await serverLogin({...data, mobileNumber: Number(data?.mobileNumber)});
+      if (res?.userDataAndToken) {
+        Cookies.set("auth-token", res?.userDataAndToken?.token, { expires: 7 });
+        localStorage.setItem('user', JSON.stringify(res?.userDataAndToken));
+        router.push("/")
+      }
+      console.log('res', res);
       // Simulate API call with timeout
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // await new Promise((resolve) => setTimeout(resolve, 1500))
 
       // In a real app, you would send the data to your API
       // const response = await fetch('/api/auth/login', {
@@ -57,13 +66,13 @@ export default function LoginPage() {
       // const result = await response.json()
       // if (!response.ok) throw new Error(result.message || 'Login failed')
 
-      console.log("Login successful", data)
+      // console.log("Login successful", data)
 
       // Redirect to home page after successful login
-      router.push("/")
-    } catch (err) {
+      // router.push("/")
+    } catch (err: any) {
       console.error("Login error:", err)
-      setError(err instanceof Error ? err.message : "Invalid mobile number or password. Please try again.")
+      setError(err ? err?.response?.data?.error : "Invalid mobile number or password. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -83,7 +92,7 @@ export default function LoginPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="mobile"
+              name="mobileNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mobile Number</FormLabel>
