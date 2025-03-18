@@ -25,6 +25,7 @@ import { useMobile } from "@/hooks/use-mobile"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import useShop from "@/hooks/useShop"
+import Image from "next/image"
 
 export default function Header() {
   const { cart, wishlist } = useCart()
@@ -199,7 +200,10 @@ export default function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            ShopEase
+            {!isMobile && (
+              <Image src="/logo.jpeg" alt="Logo" width={50} height={50} />
+            )}
+            VR Fashion
           </Link>
         </div>
 
@@ -208,17 +212,17 @@ export default function Header() {
           <Link href="/" className="text-sm font-medium hover:underline">
             Home
           </Link>
-          <Link href="/shop" className="text-sm font-medium hover:underline">
-            Shop
-          </Link>
           <Link href="/categories" className="text-sm font-medium hover:underline">
             Categories
           </Link>
+          <Link href="/shop" className="text-sm font-medium hover:underline">
+            Shop
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="text-sm font-medium">
+              <div className="text-sm font-medium" style={{ cursor: "pointer" }}>
                 Categories
-              </Button>
+              </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {categoryData?.map((item: any) => {

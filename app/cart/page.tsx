@@ -49,7 +49,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container px-4 py-8 md:px-6 md:py-12">
+    <div className="w-full px-4 py-8 md:px-6 md:py-12">
       <h1 className="mb-8 text-3xl font-bold">Your Cart</h1>
 
       {cart.length === 0 ? (
@@ -191,7 +191,7 @@ export default function CartPage() {
 // Cart Page Skeleton
 function CartPageSkeleton() {
   return (
-    <div className="container px-4 py-8 md:px-6 md:py-12">
+    <div className="w-full px-4 py-8 md:px-6 md:py-12">
       <div className="h-10 w-48 rounded-md bg-muted animate-pulse mb-8" />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
