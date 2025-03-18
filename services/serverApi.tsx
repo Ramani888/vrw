@@ -75,6 +75,11 @@ export const serverLogin = async (data: {mobileNumber: number, password: string}
   return res;
 };
 
+export const serverRegister = async (data: any) => {
+  const res = await serverRequest("/registerUser", "POST", data, true);
+  return res;
+};
+
 //////////  Banner Api //////////
 export const serverGetBanners = async () => {
   const res = await serverRequest("/banner", "GET", null, true);

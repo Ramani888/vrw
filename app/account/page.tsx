@@ -30,7 +30,8 @@ export default function AccountPage() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     Cookies.remove("auth-token");
-    router.push("/"); 
+    router.push("/");
+    window.location.reload();
   }
 
   return (

@@ -12,14 +12,16 @@ import { Loader } from "@/components/ui/loader"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Eye, EyeOff } from "lucide-react"
+import { serverRegister } from "@/services/serverApi"
+import { StateData } from "@/utils/global"
 
 // Form validation schema
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  mobile: z
+  mobileNumber: z
     .string()
     .min(10, { message: "Mobile number must be at least 10 digits" })
-    .max(15, { message: "Mobile number must not exceed 15 digits" })
+    .max(10, { message: "Mobile number must not exceed 10 digits" })
     .regex(/^\d+$/, { message: "Mobile number must contain only digits" }),
   password: z
     .string()
@@ -31,7 +33,7 @@ const signupSchema = z.object({
   country: z.string().min(1, { message: "Please select a country" }),
   state: z.string().min(1, { message: "Please select a state" }),
   city: z.string().min(1, { message: "Please enter a city" }),
-  pincode: z
+  pinCode: z
     .string()
     .min(4, { message: "Pincode must be at least 4 digits" })
     .max(10, { message: "Pincode must not exceed 10 digits" })
@@ -42,102 +44,43 @@ type SignupFormValues = z.infer<typeof signupSchema>
 
 // Mock country data
 const countries = [
-  { id: "in", name: "India" },
-  { id: "us", name: "United States" },
-  { id: "uk", name: "United Kingdom" },
-  { id: "ca", name: "Canada" },
-  { id: "au", name: "Australia" },
+  { name: "India" },
 ]
-
-// Mock state data by country
-const statesByCountry: Record<string, { id: string; name: string }[]> = {
-  in: [
-    { id: "mh", name: "Maharashtra" },
-    { id: "dl", name: "Delhi" },
-    { id: "ka", name: "Karnataka" },
-    { id: "tn", name: "Tamil Nadu" },
-    { id: "gj", name: "Gujarat" },
-  ],
-  us: [
-    { id: "ny", name: "New York" },
-    { id: "ca", name: "California" },
-    { id: "tx", name: "Texas" },
-    { id: "fl", name: "Florida" },
-    { id: "il", name: "Illinois" },
-  ],
-  uk: [
-    { id: "en", name: "England" },
-    { id: "sc", name: "Scotland" },
-    { id: "wa", name: "Wales" },
-    { id: "ni", name: "Northern Ireland" },
-  ],
-  ca: [
-    { id: "on", name: "Ontario" },
-    { id: "qc", name: "Quebec" },
-    { id: "bc", name: "British Columbia" },
-    { id: "ab", name: "Alberta" },
-  ],
-  au: [
-    { id: "nsw", name: "New South Wales" },
-    { id: "qld", name: "Queensland" },
-    { id: "vic", name: "Victoria" },
-    { id: "wa", name: "Western Australia" },
-  ],
-}
 
 export default function SignupPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [availableStates, setAvailableStates] = useState<{ id: string; name: string }[]>([])
 
   // Initialize form
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
-      mobile: "",
+      mobileNumber: "",
       password: "",
       email: "",
       country: "",
       state: "",
       city: "",
-      pincode: "",
+      pinCode: "",
     },
   })
 
-  // Handle country change to update states
-  const handleCountryChange = (countryId: string) => {
-    form.setValue("state", "")
-    setAvailableStates(statesByCountry[countryId] || [])
-  }
-
-  // Handle form submission
   const onSubmit = async (data: SignupFormValues) => {
     setLoading(true)
     setError(null)
 
     try {
-      // Simulate API call with timeout
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // In a real app, you would send the data to your API
-      // const response = await fetch('/api/auth/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data),
-      // })
-      // const result = await response.json()
-      // if (!response.ok) throw new Error(result.message || 'Signup failed')
-
-      console.log("Signup successful", data)
-
-      // Redirect to login page after successful signup
-      router.push("/login")
-    } catch (err) {
+      const res = await serverRegister({...data, fcm_token: 'testing'});
+      console.log('res', res);
+      if (res?.success) {
+        router.push("/login")
+      }
+    } catch (err: any) {
       console.error("Signup error:", err)
-      setError(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.")
+      setError(err ? err?.response?.data?.error : "An unexpected error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -171,7 +114,7 @@ export default function SignupPage() {
 
             <FormField
               control={form.control}
-              name="mobile"
+              name="mobileNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mobile Number</FormLabel>
@@ -231,10 +174,7 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <Select
-                      onValueChange={(value) => {
-                        field.onChange(value)
-                        handleCountryChange(value)
-                      }}
+                      onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
@@ -244,8 +184,8 @@ export default function SignupPage() {
                       </FormControl>
                       <SelectContent>
                         {countries.map((country) => (
-                          <SelectItem key={country.id} value={country.id}>
-                            {country.name}
+                          <SelectItem key={country?.name} value={country?.name}>
+                            {country?.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -264,7 +204,7 @@ export default function SignupPage() {
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={availableStates.length === 0}
+                      disabled={StateData?.length === 0}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -272,8 +212,8 @@ export default function SignupPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableStates.map((state) => (
-                          <SelectItem key={state.id} value={state.id}>
+                        {StateData.map((state) => (
+                          <SelectItem key={state.name} value={state.name}>
                             {state.name}
                           </SelectItem>
                         ))}
@@ -302,7 +242,7 @@ export default function SignupPage() {
 
               <FormField
                 control={form.control}
-                name="pincode"
+                name="pinCode"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pincode</FormLabel>

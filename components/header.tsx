@@ -26,10 +26,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import useShop from "@/hooks/useShop"
 import Image from "next/image"
+import { getUserData } from "@/utils/auth"
 
 export default function Header() {
   const { cart, wishlist } = useCart()
   const isMobile = useMobile()
+  const userData = getUserData();
   const [isOpen, setIsOpen] = useState(false)
 
   // Mock user data - in a real app, this would come from authentication context
@@ -293,16 +295,20 @@ export default function Header() {
                   My Wallet
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/login" className="w-full">
-                  Login
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/signup" className="w-full">
-                  Sign Up
-                </Link>
-              </DropdownMenuItem>
+              {!userData && (
+                <DropdownMenuItem>
+                  <Link href="/login" className="w-full">
+                    Login
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {!userData && (
+                <DropdownMenuItem>
+                  <Link href="/signup" className="w-full">
+                    Sign Up
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -51,25 +51,9 @@ export default function LoginPage() {
       if (res?.userDataAndToken) {
         Cookies.set("auth-token", res?.userDataAndToken?.token, { expires: 7 });
         localStorage.setItem('user', JSON.stringify(res?.userDataAndToken));
-        router.push("/")
+        router.push("/");
+        window.location.reload();
       }
-      console.log('res', res);
-      // Simulate API call with timeout
-      // await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // In a real app, you would send the data to your API
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data),
-      // })
-      // const result = await response.json()
-      // if (!response.ok) throw new Error(result.message || 'Login failed')
-
-      // console.log("Login successful", data)
-
-      // Redirect to home page after successful login
-      // router.push("/")
     } catch (err: any) {
       console.error("Login error:", err)
       setError(err ? err?.response?.data?.error : "Invalid mobile number or password. Please try again.")
