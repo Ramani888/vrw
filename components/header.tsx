@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
 import useShop from "@/hooks/useShop"
+import logo from "../public/logo.jpeg";
 
 export default function Header() {
   const { cart, wishlist } = useCart()
@@ -197,7 +198,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             {!isMobile && (
-              <Image src="/logo.jpeg" alt="Logo" width={50} height={50} />
+              <Image src={logo} alt="Logo" width={50} height={50} />
             )}
             VR Fashion
           </Link>
