@@ -74,7 +74,6 @@ export default function SignupPage() {
 
     try {
       const res = await serverRegister({...data, fcm_token: 'testing'});
-      console.log('res', res);
       if (res?.success) {
         router.push("/login")
       }

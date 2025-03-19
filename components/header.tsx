@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useCart } from "./cart-provider"
+import { useAuth } from "./auth-provider"
 import { Button } from "@/components/ui/button"
 import {
   ShoppingCart,
@@ -24,23 +25,30 @@ import { useState } from "react"
 import { useMobile } from "@/hooks/use-mobile"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import useShop from "@/hooks/useShop"
 import Image from "next/image"
-import { getUserData } from "@/utils/auth"
+import useShop from "@/hooks/useShop"
 
 export default function Header() {
   const { cart, wishlist } = useCart()
+  const { user, isAuthenticated, logout, showLoginDialog } = useAuth()
   const isMobile = useMobile()
-  const userData = getUserData();
   const [isOpen, setIsOpen] = useState(false)
 
-  // Mock user data - in a real app, this would come from authentication context
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "/placeholder.svg?height=40&width=40",
-    walletBalance: 500,
+  const toggleMenu = () => {
+    setIsOpen(!isOpen)
   }
+
+  const handleLoginClick = () => {
+    showLoginDialog()
+  }
+
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/shop", label: "Shop" },
+    { href: "/categories", label: "Categories" },
+    { href: "/about", label: "About Us" },
+    { href: "/contact", label: "Contact Us" },
+  ]
 
   const {
     categoryData,
@@ -63,25 +71,34 @@ export default function Header() {
               <div className="flex flex-col h-full">
                 {/* User Profile Section */}
                 <div className="p-6 bg-primary/5">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 border-2 border-primary/20">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate">{user.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  {isAuthenticated ? (
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-primary/20">
+                        <AvatarImage src="/placeholder.svg?height=40&width=40" alt={user?.name} />
+                        <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium truncate">{user?.name}</h3>
+                        <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <h3 className="font-medium">Welcome to ShopEase</h3>
+                      <Button onClick={handleLoginClick}>Sign In</Button>
+                    </div>
+                  )}
 
                   {/* Wallet Balance */}
-                  <div className="mt-4 p-3 bg-background rounded-lg border flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="h-5 w-5 text-primary" />
-                      <span className="text-sm font-medium">Wallet Balance</span>
+                  {isAuthenticated && (
+                    <div className="mt-4 p-3 bg-background rounded-lg border flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-5 w-5 text-primary" />
+                        <span className="text-sm font-medium">Wallet Balance</span>
+                      </div>
+                      <span className="font-bold">₹500</span>
                     </div>
-                    <span className="font-bold">₹{user.walletBalance}</span>
-                  </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -89,113 +106,90 @@ export default function Header() {
                 {/* Navigation Links */}
                 <nav className="flex-1 overflow-auto py-4">
                   <div className="flex flex-col gap-1 px-2">
-                    <Link
-                      href="/"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Home className="h-5 w-5 text-primary" />
-                      <span>Home</span>
-                    </Link>
-
-                    <Link
-                      href="/shop"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <ShoppingBag className="h-5 w-5 text-primary" />
-                      <span>Shop</span>
-                    </Link>
-
-                    <Link
-                      href="/categories"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Grid3X3 className="h-5 w-5 text-primary" />
-                      <span>Categories</span>
-                    </Link>
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {link.href === "/" && <Home className="h-5 w-5 text-primary" />}
+                        {link.href === "/shop" && <ShoppingBag className="h-5 w-5 text-primary" />}
+                        {link.href === "/categories" && <Grid3X3 className="h-5 w-5 text-primary" />}
+                        {link.href === "/about" && <Info className="h-5 w-5 text-primary" />}
+                        {link.href === "/contact" && <Phone className="h-5 w-5 text-primary" />}
+                        <span>{link.label}</span>
+                      </Link>
+                    ))}
 
                     <Separator className="my-2" />
 
-                    <div className="px-3 py-1 text-xs font-semibold text-muted-foreground">MY ACCOUNT</div>
+                    {isAuthenticated && (
+                      <>
+                        <div className="px-3 py-1 text-xs font-semibold text-muted-foreground">MY ACCOUNT</div>
 
-                    <Link
-                      href="/account"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <User className="h-5 w-5 text-primary" />
-                      <span>Profile</span>
-                    </Link>
+                        <Link
+                          href="/account"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <User className="h-5 w-5 text-primary" />
+                          <span>Profile</span>
+                        </Link>
 
-                    <Link
-                      href="/account/orders"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Package className="h-5 w-5 text-primary" />
-                      <span>My Orders</span>
-                    </Link>
+                        <Link
+                          href="/account/orders"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <Package className="h-5 w-5 text-primary" />
+                          <span>My Orders</span>
+                        </Link>
 
-                    <Link
-                      href="/account/wallet"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Wallet className="h-5 w-5 text-primary" />
-                      <span>My Wallet</span>
-                    </Link>
+                        <Link
+                          href="/account/wallet"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <Wallet className="h-5 w-5 text-primary" />
+                          <span>My Wallet</span>
+                        </Link>
 
-                    <Link
-                      href="/wishlist"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Heart className="h-5 w-5 text-primary" />
-                      <span>Wishlist</span>
-                    </Link>
+                        <Link
+                          href="/wishlist"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <Heart className="h-5 w-5 text-primary" />
+                          <span>Wishlist</span>
+                        </Link>
 
-                    <Link
-                      href="/account/addresses"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <MapPin className="h-5 w-5 text-primary" />
-                      <span>Addresses</span>
-                    </Link>
+                        <Link
+                          href="/account/addresses"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <MapPin className="h-5 w-5 text-primary" />
+                          <span>Addresses</span>
+                        </Link>
 
-                    <Separator className="my-2" />
+                        <Separator className="my-2" />
 
-                    <Link
-                      href="/about"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Info className="h-5 w-5 text-primary" />
-                      <span>About Us</span>
-                    </Link>
-
-                    <Link
-                      href="/contact"
-                      className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <Phone className="h-5 w-5 text-primary" />
-                      <span>Contact Us</span>
-                    </Link>
+                        <Button
+                          variant="ghost"
+                          className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent w-full justify-start"
+                          onClick={() => {
+                            logout()
+                            setIsOpen(false)
+                          }}
+                        >
+                          <LogOut className="h-5 w-5 text-primary" />
+                          <span>Logout</span>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </nav>
-
-                <Separator />
-
-                {/* Logout Button */}
-                <div className="p-4">
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setIsOpen(false)}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Button>
-                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -211,15 +205,11 @@ export default function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-sm font-medium hover:underline">
-            Home
-          </Link>
-          <Link href="/categories" className="text-sm font-medium hover:underline">
-            Categories
-          </Link>
-          <Link href="/shop" className="text-sm font-medium hover:underline">
-            Shop
-          </Link>
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="text-sm font-medium hover:underline">
+              {link.label}
+            </Link>
+          ))}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="text-sm font-medium" style={{ cursor: "pointer" }}>
@@ -238,12 +228,6 @@ export default function Header() {
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Link href="/about" className="text-sm font-medium hover:underline">
-            About Us
-          </Link>
-          <Link href="/contact" className="text-sm font-medium hover:underline">
-            Contact Us
-          </Link>
         </nav>
 
         {/* Cart, Wishlist, User */}
@@ -272,45 +256,40 @@ export default function Header() {
             </Button>
           </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-                <span className="sr-only">Account</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Link href="/account" className="w-full">
-                  My Account
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/account/orders" className="w-full">
-                  My Orders
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/account/wallet" className="w-full">
-                  My Wallet
-                </Link>
-              </DropdownMenuItem>
-              {!userData && (
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Account</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem>
-                  <Link href="/login" className="w-full">
-                    Login
+                  <Link href="/account" className="w-full">
+                    My Account
                   </Link>
                 </DropdownMenuItem>
-              )}
-              {!userData && (
                 <DropdownMenuItem>
-                  <Link href="/signup" className="w-full">
-                    Sign Up
+                  <Link href="/account/orders" className="w-full">
+                    My Orders
                   </Link>
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem>
+                  <Link href="/account/wallet" className="w-full">
+                    My Wallet
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  <span className="w-full">Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="outline" size="sm" onClick={handleLoginClick}>
+              Sign In
+            </Button>
+          )}
         </div>
       </div>
     </header>

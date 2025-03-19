@@ -1,131 +1,178 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Eye, EyeOff } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { StateData } from "@/utils/global"
+import { serverRegisterLogin } from "@/services/serverApi"
+import Cookies from "js-cookie";
+
+const loginSchema = z.object({
+  mobileNumber: z
+    .string()
+    .min(10, { message: "Mobile number must be at least 10 digits" })
+    .max(10, { message: "Mobile number must not exceed 10 digits" })
+    .regex(/^\d+$/, { message: "Mobile number must contain only digits" }),
+  state: z.string().min(1, { message: "Please select a state" }),
+  city: z.string().min(1, { message: "Please enter a city" }),
+  pinCode: z
+    .string()
+    .min(4, { message: "Pincode must be at least 4 digits" })
+    .max(10, { message: "Pincode must not exceed 10 digits" })
+    .regex(/^\d+$/, { message: "Pincode must contain only digits" }),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 interface LoginDialogProps {
-  trigger?: React.ReactNode
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: () => void
+  redirectUrl?: string
 }
 
-export default function LoginDialog({ trigger }: LoginDialogProps) {
+export default function LoginDialog({ isOpen, onClose, onSuccess, redirectUrl }: LoginDialogProps) {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, you would handle authentication here
-    console.log({ email, password, rememberMe })
-    setOpen(false)
-    router.push("/account")
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      mobileNumber: "",
+      state: "",
+      city: "",
+      pinCode: "",
+    },
+  })
+
+  // Reset form fields when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      form.reset()
+      setError(null) // Clear any previous error messages
+    }
+  }, [isOpen, form])
+
+  const handleSubmit = async (data: LoginFormValues) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await serverRegisterLogin({ ...data, country: "India", fcm_token: 'testing' });
+      if (res?.userDataAndToken) {
+        Cookies.set("auth-token", res?.userDataAndToken?.token, { expires: 7 });
+        localStorage.setItem('user', JSON.stringify(res?.userDataAndToken));
+      }
+      onSuccess()
+      router.push(redirectUrl ?? '/')
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("Authentication failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger || <Button variant="outline">Login</Button>}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl">Welcome Back</DialogTitle>
+          <DialogTitle>Sign in to continue</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+        {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="mobileNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobile Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="9876543210" type="tel" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {StateData?.map((state) => (
+                        <SelectItem key={state.name} value={state.name}>
+                          {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Mumbai" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="pinCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pincode</FormLabel>
+                  <FormControl>
+                    <Input placeholder="400001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+              <div className="text-sm text-muted-foreground w-full">
+                <Link href="/signup" className="text-primary hover:underline" onClick={(e) => onClose()}>
+                  Create an account
+                </Link>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="remember"
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked === true)}
-            />
-            <Label htmlFor="remember" className="text-sm font-normal">
-              Remember me
-            </Label>
-          </div>
-
-          <Button type="submit" className="w-full">
-            Sign In
-          </Button>
-        </form>
-
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          <span>
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline" onClick={() => setOpen(false)}>
-              Sign up
-            </Link>
-          </span>
-        </div>
-
-        <div className="relative mt-4">
-          <div className="absolute inset-0 flex items-center">
-            <Separator className="w-full" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <Button variant="outline" className="w-full">
-            Google
-          </Button>
-          <Button variant="outline" className="w-full">
-            Facebook
-          </Button>
-        </div>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
 }
-

@@ -80,6 +80,11 @@ export const serverRegister = async (data: any) => {
   return res;
 };
 
+export const serverRegisterLogin = async (data: any) => {
+  const res = await serverRequest("/register/login", "POST", data, true);
+  return res;
+};
+
 //////////  Banner Api //////////
 export const serverGetBanners = async () => {
   const res = await serverRequest("/banner", "GET", null, true);

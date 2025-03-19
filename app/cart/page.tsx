@@ -80,7 +80,7 @@ export default function CartPage() {
 
                 <div className="space-y-4">
                   {cart.map((item, index) => (
-                    <div key={`${item.id}-${item.size}-${item.color}-${index}`} className="flex gap-4">
+                    <div key={`${item.id}-${item?.size}-${item?.color}-${index}`} className="flex gap-4">
                       <div className="relative h-24 w-24 overflow-hidden rounded-md border">
                         <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
                       </div>
@@ -91,11 +91,11 @@ export default function CartPage() {
                             {item.name}
                           </Link>
                           {/* Display size and color if available */}
-                          {(item.size || item.color) && (
+                          {(item?.size || item?.color) && (
                             <div className="mt-1 text-sm text-muted-foreground">
-                              {item.color && <span>Color: {item.color}</span>}
-                              {item.color && item.size && <span> | </span>}
-                              {item.size && <span>Size: {item.size}</span>}
+                              {item?.color && <span>Color: {item?.color}</span>}
+                              {item?.color && item?.size && <span> | </span>}
+                              {item?.size && <span>Size: {item?.size}</span>}
                             </div>
                           )}
                           <div className="mt-1 flex items-center gap-2">

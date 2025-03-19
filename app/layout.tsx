@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { CartProvider } from "@/components/cart-provider"
+import { AuthProvider } from "@/components/auth-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -23,13 +24,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light">
-          <CartProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
