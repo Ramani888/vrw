@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,92 +9,190 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Wallet, ArrowUpRight, ArrowDownLeft, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-
-// Mock wallet data
-const walletBalance = 500
-
-// Mock transaction history
-const transactions = [
-  {
-    id: "TXN12345",
-    date: "2024-03-10",
-    type: "credit",
-    amount: 200,
-    description: "Cashback from order #ORD12345",
-    status: "completed",
-  },
-  {
-    id: "TXN12346",
-    date: "2024-03-05",
-    type: "debit",
-    amount: 150,
-    description: "Used for order #ORD12346",
-    status: "completed",
-  },
-  {
-    id: "TXN12347",
-    date: "2024-02-28",
-    type: "credit",
-    amount: 100,
-    description: "Referral bonus",
-    status: "completed",
-  },
-  {
-    id: "TXN12348",
-    date: "2024-02-20",
-    type: "credit",
-    amount: 50,
-    description: "Welcome bonus",
-    status: "completed",
-  },
-  {
-    id: "TXN12349",
-    date: "2024-02-15",
-    type: "debit",
-    amount: 200,
-    description: "Used for order #ORD12347",
-    status: "completed",
-  },
-  {
-    id: "TXN12350",
-    date: "2024-02-10",
-    type: "credit",
-    amount: 500,
-    description: "Added via UPI payment",
-    status: "completed",
-  },
-]
+import { serverGetRewardData } from "@/services/serverApi"
+import { useAuth } from "@/components/auth-provider"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function WalletPage() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState("all")
   const [dateRange, setDateRange] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true);
+  const [rewardData, setRewardData] = useState<any>(null);
   const itemsPerPage = 5
 
   // Filter transactions based on selected filters
-  const filteredTransactions = transactions.filter((transaction) => {
-    if (filter !== "all" && transaction.type !== filter) {
-      return false
-    }
-
+  const filteredTransactions = rewardData?.rewards?.filter((transaction: any) => {
+    if (!transaction) return false;
+  
+    const transactionDate = transaction?.createdAt ? new Date(transaction.createdAt) : null;
+    const now = new Date();
+  
+    // Filtering based on credit/debit type
+    if (filter === 'credit' && !transaction?.isEarned) return false;
+    if (filter === 'debit' && transaction?.isEarned) return false;
+  
+    // Filtering based on date range
     if (dateRange === "last7days") {
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      return new Date(transaction.date) >= sevenDaysAgo
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(now.getDate() - 7);
+      if (transactionDate && transactionDate < sevenDaysAgo) return false;
     }
-
+  
     if (dateRange === "last30days") {
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      return new Date(transaction.date) >= thirtyDaysAgo
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      if (transactionDate && transactionDate < thirtyDaysAgo) return false;
     }
-
-    return true
-  })
+  
+    return true;
+  }) || [];
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
   const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, dateRange]);
+
+  const getRewardData = async () => {
+    try {
+      setLoading(true);
+      const res = await serverGetRewardData(String(user?._id?.toString()));
+      setRewardData(res?.data);
+    } catch (err) {
+      console.error("Error fetching reward data:", err);
+      setRewardData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (user?._id) {
+      getRewardData();
+    }
+  }, [user]);
+
+  // Component for transaction table - reused across tabs
+  const TransactionTable = () => {
+    if (loading) {
+      return <TableSkeleton />;
+    }
+    
+    if (paginatedTransactions.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium">No transactions found</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filter !== "all"
+              ? `You don't have any ${filter} transactions in the selected time period.`
+              : "You don't have any transactions in the selected time period."}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Type</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedTransactions.map((transaction: any) => (
+              <TableRow key={transaction?._id}>
+                <TableCell className="font-medium">
+                  {new Date(transaction?.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>₹{transaction?.reward}</TableCell>
+                <TableCell>
+                  {transaction?.isEarned ? (
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                      <ArrowDownLeft className="mr-1 h-3 w-3" />
+                      Credit
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">
+                      <ArrowUpRight className="mr-1 h-3 w-3" />
+                      Debit
+                    </Badge>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-2 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} of{" "}
+              {filteredTransactions.length} transactions
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Skeleton loaders
+  const TableSkeleton = () => (
+    <div className="space-y-3">
+      <div className="flex space-x-4 h-10">
+        <Skeleton className="h-8 w-1/4" />
+        <Skeleton className="h-8 w-1/4" />
+        <Skeleton className="h-8 w-1/4" />
+      </div>
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex space-x-4 h-12">
+          <Skeleton className="h-10 w-1/3" />
+          <Skeleton className="h-10 w-1/3" />
+          <Skeleton className="h-10 w-1/3" />
+        </div>
+      ))}
+    </div>
+  );
+
+  const BalanceSkeleton = () => (
+    <div className="flex flex-col items-center justify-center p-6">
+      <Skeleton className="h-24 w-24 rounded-full mb-4" />
+      <Skeleton className="h-8 w-28 mb-2" />
+      <Skeleton className="h-4 w-40 mb-6" />
+      <div className="grid grid-cols-2 gap-4 w-full">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12">
@@ -115,18 +213,26 @@ export default function WalletPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center p-6">
-              <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10 mb-4">
-                <Wallet className="h-12 w-12 text-primary" />
-              </div>
-              <div className="text-3xl font-bold">₹{walletBalance}</div>
-              <p className="text-sm text-muted-foreground mt-2">Available Balance</p>
+            {loading ? (
+              <BalanceSkeleton />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-6">
+                <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10 mb-4">
+                  <Wallet className="h-12 w-12 text-primary" />
+                </div>
+                <div className="text-3xl font-bold">₹{rewardData?.remainingReward || 0}</div>
+                <p className="text-sm text-muted-foreground mt-2">Available Balance</p>
 
-              <div className="grid grid-cols-2 gap-4 w-full mt-6">
-                <Button>Add Money</Button>
-                <Button variant="outline">Withdraw</Button>
+                <div className="grid grid-cols-2 gap-4 w-full mt-6">
+                  <Button className="bg-green-100 text-green-800">
+                    ₹{rewardData?.totalEarnedReward || 0}
+                  </Button>
+                  <Button className="bg-red-100 text-red-800 hover:bg-red-100">
+                    ₹{rewardData?.totalRedeemedReward || 0}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -165,92 +271,17 @@ export default function WalletPage() {
                 </div>
               </div>
 
+              {/* Using the same TransactionTable component for all tabs */}
               <TabsContent value="all" className="mt-0">
-                {paginatedTransactions.length > 0 ? (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Type</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedTransactions.map((transaction) => (
-                          <TableRow key={transaction.id}>
-                            <TableCell className="font-medium">
-                              {new Date(transaction.date).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>{transaction.description}</TableCell>
-                            <TableCell>₹{transaction.amount}</TableCell>
-                            <TableCell>
-                              {transaction.type === "credit" ? (
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                                  <ArrowDownLeft className="mr-1 h-3 w-3" />
-                                  Credit
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100">
-                                  <ArrowUpRight className="mr-1 h-3 w-3" />
-                                  Debit
-                                </Badge>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-between px-4 py-2 border-t">
-                        <div className="text-sm text-muted-foreground">
-                          Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                          {Math.min(currentPage * itemsPerPage, filteredTransactions.length)} of{" "}
-                          {filteredTransactions.length} transactions
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">No transactions found</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {filter !== "all"
-                        ? `You don't have any ${filter} transactions in the selected time period.`
-                        : "You don't have any transactions in the selected time period."}
-                    </p>
-                  </div>
-                )}
+                <TransactionTable />
               </TabsContent>
 
               <TabsContent value="credit" className="mt-0">
-                {/* Credit transactions will be shown here */}
+                <TransactionTable />
               </TabsContent>
 
               <TabsContent value="debit" className="mt-0">
-                {/* Debit transactions will be shown here */}
+                <TransactionTable />
               </TabsContent>
             </Tabs>
           </CardContent>

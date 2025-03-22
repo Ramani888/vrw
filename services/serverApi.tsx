@@ -389,3 +389,13 @@ export const serverUpdateDeliveryAddressData = async (data: any) => {
   const res = await serverRequest(url, "PUT", data, true);
   return res;
 };
+
+/********** Reward Api **********/
+export const serverGetRewardData = async (userId: string) => {
+  let url = `/reward`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
