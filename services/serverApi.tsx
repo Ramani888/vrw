@@ -220,6 +220,15 @@ export const serverUpdateProductAction = async (productId: string) => {
   return res;
 }
 
+export const serverGetWishlistProduct = async (userId: string) => {
+  let url = `/wishlist`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
+
 ////////// Category Api //////////
 export const serverGetCategory = async () => {
   const res = await serverRequest('/category', 'GET', null, true);
@@ -393,6 +402,16 @@ export const serverUpdateDeliveryAddressData = async (data: any) => {
 /********** Reward Api **********/
 export const serverGetRewardData = async (userId: string) => {
   let url = `/reward`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
+
+/********** Cart Api **********/
+export const serverGetCartData = async (userId: string) => {
+  let url = `/cart`;
   if (userId) {
     url += `?userId=${userId}`;
   }

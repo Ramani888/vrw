@@ -1,10 +1,25 @@
+"use client"
+
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, ShoppingBag } from "lucide-react"
+import { Suspense, useEffect, useState } from "react"
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessForm() {
+  const searchParams = useSearchParams()
+  const orderId = searchParams.get("orderId") || "ORD12345"
+  const paymentMethod = searchParams.get("paymentMethod") || "Credit Card"
+  const paymentId = searchParams.get("paymentId")
+
+  const [orderDate, setOrderDate] = useState("")
+
+  useEffect(() => {
+    setOrderDate(new Date().toLocaleDateString())
+  }, [])
+
   return (
-    <div className="w-full flex flex-col items-center justify-center px-4 py-12 md:py-24">
+    <div className="container flex flex-col items-center justify-center px-4 py-12 md:py-24">
       <div className="mx-auto max-w-md text-center">
         <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
 
@@ -20,16 +35,22 @@ export default function CheckoutSuccessPage() {
           <div className="mt-4 space-y-2">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Order Number:</span>
-              <span className="font-medium">#ORD12345</span>
+              <span className="font-medium">{orderId}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Date:</span>
-              <span className="font-medium">{new Date().toLocaleDateString()}</span>
+              <span className="font-medium">{orderDate}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Payment Method:</span>
-              <span className="font-medium">Credit Card</span>
+              <span className="font-medium">{paymentMethod}</span>
             </div>
+            {paymentId && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Payment ID:</span>
+                <span className="font-medium">{paymentId}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping Address:</span>
               <span className="font-medium text-right">123 Main St, Anytown</span>
@@ -44,14 +65,22 @@ export default function CheckoutSuccessPage() {
               Continue Shopping
             </Button>
           </Link>
-          <Link href="/">
+          <Link href="/account/orders">
             <Button variant="outline" className="w-full sm:w-auto">
-              Return to Home
+              View My Orders
             </Button>
           </Link>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutSuccessForm />
+    </Suspense>
   )
 }
 
