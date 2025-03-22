@@ -21,19 +21,22 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMobile } from "@/hooks/use-mobile"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import Image from "next/image"
 import useShop from "@/hooks/useShop"
 import logo from "../public/logo.jpeg";
+import { serverGetRewardData } from "@/services/serverApi"
 
 export default function Header() {
   const { cart, wishlist } = useCart()
   const { user, isAuthenticated, logout, showLoginDialog } = useAuth()
   const isMobile = useMobile()
   const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [rewardData, setRewardData] = useState<any>(null);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -52,9 +55,27 @@ export default function Header() {
   ]
 
   const {
-    categoryData,
-    loading
+    categoryData
   } = useShop();
+
+  const getRewardData = async () => {
+    try {
+      setLoading(true);
+      const res = await serverGetRewardData(String(user?._id?.toString()));
+      setRewardData(res?.data);
+    } catch (err) {
+      console.error("Error fetching reward data:", err);
+      setRewardData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+  useEffect(() => {
+    if (user?._id) {
+      getRewardData();
+    }
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -97,7 +118,7 @@ export default function Header() {
                         <Wallet className="h-5 w-5 text-primary" />
                         <span className="text-sm font-medium">Wallet Balance</span>
                       </div>
-                      <span className="font-bold">₹500</span>
+                      <span className="font-bold">₹{rewardData?.remainingReward || 0}</span>
                     </div>
                   )}
                 </div>
