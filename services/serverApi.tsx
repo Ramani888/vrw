@@ -252,6 +252,15 @@ export const serverGetOrders = async () => {
   return res
 }
 
+export const serverGetOrder = async (userId: string) => {
+  let url = `/user/order`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
+
 export const serverUpdateOrderStatus = async (orderId: string, status: string) => {
   const res = await serverRequest(`/order/status?orderId=${orderId}&status=${status}`, 'PUT', null, true);
   return res
@@ -358,3 +367,25 @@ export const serverRefundPayment = async (paymentId: string, payment: number) =>
   const res = await serverRequest('/refund/payment', 'POST', {paymentId, payment}, true);
   return res
 }
+
+/********** Delivery Address Api **********/
+export const serverGetDeliveryAddressData = async (userId: string) => {
+  let url = `/delivery/address`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
+
+export const serverAddDeliveryAddressData = async (data: any) => {
+  let url = `/delivery/address`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+};
+
+export const serverUpdateDeliveryAddressData = async (data: any) => {
+  let url = `/delivery/address`;
+  const res = await serverRequest(url, "PUT", data, true);
+  return res;
+};

@@ -12,14 +12,16 @@ import { Label } from "@/components/ui/label"
 import { User, Package, Heart, MapPin, CreditCard, LogOut } from "lucide-react"
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth-provider"
 
 export default function AccountPage() {
   const router = useRouter()
-  const [user, setUser] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (123) 456-7890",
-  })
+  const { user } = useAuth()
+  // const [user, setUser] = useState({
+  //   name: "John Doe",
+  //   email: "john.doe@example.com",
+  //   phone: "+1 (123) 456-7890",
+  // })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,9 +50,8 @@ export default function AccountPage() {
                   <User className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">{user.name}</h3>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
+                  <h3 className="font-medium">{user?.name}</h3>
+                  <p className="text-sm text-muted-foreground truncate w-full max-w-[160px]">{user?.email}</p>                </div>
               </div>
             </CardContent>
           </Card>
@@ -80,10 +81,10 @@ export default function AccountPage() {
                 Addresses
               </Button>
             </Link>
-            <Link href="/account/payment">
+            <Link href="/account/wallet">
               <Button variant="ghost" className="w-full justify-start" size="sm">
                 <CreditCard className="mr-2 h-4 w-4" />
-                Payment Methods
+                Wallet
               </Button>
             </Link>
             <Button variant="ghost" className="w-full justify-start" size="sm" onClick={() => handleLogout()}>
@@ -109,23 +110,23 @@ export default function AccountPage() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" value={user.name} onChange={(e) => setUser({ ...user, name: e.target.value })} />
+                      <Input id="name" value={user?.name} onChange={(e) => {}} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
-                        value={user.email}
-                        onChange={(e) => setUser({ ...user, email: e.target.value })}
+                        value={user?.email}
+                        onChange={(e) => {}}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone</Label>
                       <Input
                         id="phone"
-                        value={user.phone}
-                        onChange={(e) => setUser({ ...user, phone: e.target.value })}
+                        value={user?.mobileNumber}
+                        onChange={(e) => {}}
                       />
                     </div>
                     <Button type="submit">Save Changes</Button>

@@ -61,7 +61,7 @@ function LoginForm() {
         Cookies.set("auth-token", res?.userDataAndToken?.token, { expires: 7 })
         localStorage.setItem("user", JSON.stringify(res?.userDataAndToken))
       }
-      login()
+      login(res?.userDataAndToken)
       router.push(redirectUrl ?? "/")
     } catch (err) {
       console.error("Login error:", err)

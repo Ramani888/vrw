@@ -35,7 +35,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 interface LoginDialogProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (user: any) => void
   redirectUrl?: string
 }
 
@@ -72,7 +72,7 @@ export default function LoginDialog({ isOpen, onClose, onSuccess, redirectUrl }:
         Cookies.set("auth-token", res?.userDataAndToken?.token, { expires: 7 });
         localStorage.setItem('user', JSON.stringify(res?.userDataAndToken));
       }
-      onSuccess()
+      onSuccess(res?.userDataAndToken)
       router.push(redirectUrl ?? '/')
     } catch (err) {
       console.error("Login error:", err)

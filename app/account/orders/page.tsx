@@ -10,67 +10,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Package, Eye, Upload, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
-
-// Mock orders data
-const orders = [
-  {
-    id: "ORD12345",
-    date: "2023-05-15",
-    status: "Delivered",
-    total: 2499,
-    items: [
-      {
-        id: "1",
-        name: "Wireless Bluetooth Earbuds",
-        price: 1499,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-      {
-        id: "8",
-        name: "Smartphone Stand and Holder",
-        price: 299,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-  },
-  {
-    id: "ORD12346",
-    date: "2023-04-28",
-    status: "Shipped",
-    total: 1999,
-    items: [
-      {
-        id: "4",
-        name: "Non-Stick Cookware Set",
-        price: 1999,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-  },
-  {
-    id: "ORD12347",
-    date: "2023-05-20",
-    status: "Pending",
-    total: 1299,
-    items: [
-      {
-        id: "5",
-        name: "Women's Running Shoes",
-        price: 1299,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-  },
-]
+import { serverGetOrder } from "@/services/serverApi"
+import { useAuth } from "@/components/auth-provider"
+import { set } from "zod"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function OrdersPage() {
+  const { user } = useAuth()
   // Add state for media upload dialog
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null)
@@ -78,6 +27,8 @@ export default function OrdersPage() {
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null)
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null)
   const [selectedVideoPreview, setSelectedVideoPreview] = useState<string | null>(null)
+  const [orderData, setOrderData] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
@@ -135,6 +86,23 @@ export default function OrdersPage() {
     setIsUploadDialogOpen(true)
   }
 
+  const getOrderData = async () => {
+    try {
+      setLoading(true);
+      const res = await serverGetOrder(String(user?._id?.toString()));
+      setOrderData(res?.data);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      setOrderData([]);
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    getOrderData();
+  }, [user])
+
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12">
       <div className="flex items-center justify-between mb-8">
@@ -144,7 +112,78 @@ export default function OrdersPage() {
         </Link>
       </div>
 
-      {orders.length === 0 ? (
+      {loading ? (
+        <div className="space-y-6">
+          {/* Desktop Skeleton */}
+          <div className="hidden md:block">
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payment ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Array(3).fill(0).map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-20" />
+                            <Skeleton className="h-8 w-20" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile Skeleton */}
+          <div className="md:hidden space-y-4">
+            {Array(3).fill(0).map((_, index) => (
+              <Card key={index}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Date:</span>
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total:</span>
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Items:</span>
+                      <Skeleton className="h-4 w-8" />
+                    </div>
+                    <div className="pt-2 flex flex-col gap-2">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : orderData?.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-16 w-16 text-muted-foreground" />
@@ -166,7 +205,7 @@ export default function OrdersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Order ID</TableHead>
+                      <TableHead>Payment ID</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Total</TableHead>
@@ -174,47 +213,47 @@ export default function OrdersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.id}</TableCell>
-                        <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                    {orderData?.map((order, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{order?.paymentId}</TableCell>
+                        <TableCell>{new Date(order?.createdAt)?.toLocaleDateString()}</TableCell>
                         <TableCell>
                           <Badge
                             variant={
-                              order.status === "Delivered"
+                              order?.status === "Delivered"
                                 ? "default"
-                                : order.status === "Processing" || order.status === "Shipped"
+                                : order?.status === "Processing" || order?.status === "Shipped"
                                   ? "secondary"
-                                  : order.status === "Pending"
+                                  : order?.status === "Pending"
                                     ? "outline"
                                     : "outline"
                             }
                           >
-                            {order.status}
+                            {order?.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>₹{order.total.toLocaleString()}</TableCell>
+                        <TableCell>₹{order?.totalAmount?.toLocaleString()}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Link href={`/account/orders/${order.id}`}>
+                            <Link href={`/account/orders/${order?._id}`}>
                               <Button variant="ghost" size="sm">
                                 <Eye className="mr-2 h-4 w-4" />
                                 View
                               </Button>
                             </Link>
-                            {order.status === "Pending" && (
+                            {order?.status === "Pending" && (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => handleCancelOrder(order.id)}
+                                onClick={() => handleCancelOrder(order?._id)}
                               >
                                 <X className="mr-2 h-4 w-4" />
                                 Cancel
                               </Button>
                             )}
-                            {order.status === "Shipped" && (
-                              <Button variant="ghost" size="sm" onClick={() => openUploadDialog(order.id)}>
+                            {order?.status === "Shipped" && (
+                              <Button variant="ghost" size="sm" onClick={() => openUploadDialog(order?._id)}>
                                 <Upload className="mr-2 h-4 w-4" />
                                 Upload
                               </Button>
@@ -231,23 +270,23 @@ export default function OrdersPage() {
 
           {/* Mobile View */}
           <div className="md:hidden space-y-4">
-            {orders.map((order) => (
-              <Card key={order.id}>
+            {orderData?.map((order) => (
+              <Card key={order?._id}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{order.id}</CardTitle>
+                    <CardTitle className="text-base">{order?.paymentId}</CardTitle>
                     <Badge
                       variant={
-                        order.status === "Delivered"
+                        order?.status === "Delivered"
                           ? "default"
-                          : order.status === "Processing" || order.status === "Shipped"
+                          : order?.status === "Processing" || order?.status === "Shipped"
                             ? "secondary"
-                            : order.status === "Pending"
+                            : order?.status === "Pending"
                               ? "outline"
                               : "outline"
                       }
                     >
-                      {order.status}
+                      {order?.status}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -255,32 +294,32 @@ export default function OrdersPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Date:</span>
-                      <span>{new Date(order.date).toLocaleDateString()}</span>
+                      <span>{new Date(order?.createdAt).toLocaleDateString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Total:</span>
-                      <span>₹{order.total.toLocaleString()}</span>
+                      <span>₹{order?.totalAmount?.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Items:</span>
-                      <span>{order.items.length}</span>
+                      <span>{order?.productDetails?.length}</span>
                     </div>
                     <div className="pt-2 flex flex-col gap-2">
-                      <Link href={`/account/orders/${order.id}`}>
+                      <Link href={`/account/orders/${order?._id}`}>
                         <Button className="w-full">View Order</Button>
                       </Link>
-                      {order.status === "Pending" && (
+                      {order?.status === "Pending" && (
                         <Button
                           variant="outline"
                           className="w-full text-destructive hover:text-destructive"
-                          onClick={() => handleCancelOrder(order.id)}
+                          onClick={() => handleCancelOrder(order?._id)}
                         >
                           <X className="mr-2 h-4 w-4" />
                           Cancel Order
                         </Button>
                       )}
-                      {order.status === "Shipped" && (
-                        <Button variant="outline" className="w-full" onClick={() => openUploadDialog(order.id)}>
+                      {order?.status === "Shipped" && (
+                        <Button variant="outline" className="w-full" onClick={() => openUploadDialog(order?._id)}>
                           <Upload className="mr-2 h-4 w-4" />
                           Upload Unloading
                         </Button>

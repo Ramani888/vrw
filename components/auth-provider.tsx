@@ -5,17 +5,17 @@ import { useRouter, usePathname } from "next/navigation"
 import LoginDialog from "@/components/login-dialog"
 
 type User = {
-  id: string
+  _id: string
   name: string
   email: string
-  mobile: string
+  mobileNumber: string
 } | null
 
 type AuthContextType = {
   user: User
   isLoading: boolean
   isAuthenticated: boolean
-  login: () => void
+  login: (userData: User) => void
   logout: () => void
   showLoginDialog: (redirectUrl?: string) => void
 }
@@ -24,15 +24,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Public routes that don't require authentication
 const publicRoutes = [
-  "/", // Home
-  "/shop", // Shop
-  "/categories", // Categories
-  "/category", // Category pages (with any slug)
-  "/product", // Product pages (with any ID)
-  "/about", // About Us
-  "/contact", // Contact Us
-  "/login", // Login
-  "/signup", // Sign Up
+  "/", "/shop", "/categories", "/category", "/product",
+  "/about", "/contact", "/login", "/signup"
 ]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -45,36 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if the current path is a public route
   const isPublicRoute = (path: string) => {
-    return publicRoutes.some((route) => {
-      // Exact match for routes like '/', '/login', etc.
-      if (route === path) return true
-
-      // Prefix match for routes like '/category/electronics', '/product/123', etc.
-      if (path.startsWith(`${route}/`)) return true
-
-      return false
-    })
+    return publicRoutes.some((route) => path === route || path.startsWith(`${route}/`))
   }
 
-  // Check if the user is authenticated on initial load
+  // Check authentication from localStorage
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       try {
-        // Check if auth token exists in cookies
-        const hasAuthToken = document.cookie.includes("auth-token=")
-
-        if (hasAuthToken) {
-          // In a real app, you would fetch the user data from your API
-          // For demo purposes, we'll set a mock user
-          setUser({
-            id: "1",
-            name: "John Doe",
-            email: "john.doe@example.com",
-            mobile: "9876543210",
-          })
+        const storedUser = localStorage.getItem("user")
+        if (storedUser) {
+          setUser(JSON.parse(storedUser))
         } else if (!isPublicRoute(pathname)) {
-          // If not authenticated and trying to access a protected route,
-          // show the login dialog and save the current URL for redirection
           showLoginDialog(pathname)
         }
       } catch (error) {
@@ -88,27 +62,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth()
   }, [pathname])
 
-  // Login function
-  const login = () => {
-    // In a real app, this would be handled by the login form
-    // For demo purposes, we're just setting the user directly
-    setUser({
-      id: "1",
-      name: "John Doe",
-      email: "john.doe@example.com",
-      mobile: "9876543210",
-    })
+  // Login function (stores user in localStorage)
+  const login = (userData: User) => {
+    if (userData) {
+      localStorage.setItem("user", JSON.stringify(userData))
+      setUser(userData)
+    }
   }
 
-  // Logout function
+  // Logout function (removes user from localStorage)
   const logout = () => {
-    // Remove auth token from cookies
-    document.cookie = "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax"
-
-    // Clear user data
+    localStorage.removeItem("user")
     setUser(null)
-
-    // Redirect to home page
     router.push("/")
   }
 
@@ -119,8 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Handle successful login
-  const handleLoginSuccess = () => {
-    login()
+  const handleLoginSuccess = (userData: User) => {
+    login(userData)
     setIsLoginDialogOpen(false)
   }
 
@@ -148,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef, use } from "react"
+import { useState, useRef, use, useEffect, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -14,173 +14,13 @@ import { ArrowLeft, Package, Truck, MapPin, Download, Upload, X } from "lucide-r
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-
-// Mock order data
-const orders = {
-  ORD12345: {
-    id: "ORD12345",
-    date: "2023-05-15",
-    status: "Delivered",
-    total: 2499,
-    paymentMethod: "Credit Card",
-    shippingAddress: {
-      name: "John Doe",
-      addressLine1: "123 Main Street",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      pincode: "10001",
-      phone: "+1 (123) 456-7890",
-    },
-    items: [
-      {
-        id: "1",
-        name: "Wireless Bluetooth Earbuds",
-        price: 1499,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-      {
-        id: "8",
-        name: "Smartphone Stand and Holder",
-        price: 299,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-    timeline: [
-      { status: "Order Placed", date: "May 15, 2023", time: "10:30 AM" },
-      { status: "Payment Confirmed", date: "May 15, 2023", time: "10:35 AM" },
-      { status: "Processing", date: "May 16, 2023", time: "09:00 AM" },
-      { status: "Shipped", date: "May 17, 2023", time: "02:15 PM" },
-      { status: "Out for Delivery", date: "May 19, 2023", time: "08:45 AM" },
-      { status: "Delivered", date: "May 19, 2023", time: "03:20 PM" },
-    ],
-  },
-  ORD12346: {
-    id: "ORD12346",
-    date: "2023-04-28",
-    status: "Delivered",
-    total: 1999,
-    paymentMethod: "UPI",
-    shippingAddress: {
-      name: "John Doe",
-      addressLine1: "123 Main Street",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      pincode: "10001",
-      phone: "+1 (123) 456-7890",
-    },
-    items: [
-      {
-        id: "4",
-        name: "Non-Stick Cookware Set",
-        price: 1999,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-    timeline: [
-      { status: "Order Placed", date: "April 28, 2023", time: "11:45 AM" },
-      { status: "Payment Confirmed", date: "April 28, 2023", time: "11:50 AM" },
-      { status: "Processing", date: "April 29, 2023", time: "10:15 AM" },
-      { status: "Shipped", date: "April 30, 2023", time: "01:30 PM" },
-      { status: "Out for Delivery", date: "May 2, 2023", time: "09:20 AM" },
-      { status: "Delivered", date: "May 2, 2023", time: "04:10 PM" },
-    ],
-  },
-  ORD12347: {
-    id: "ORD12347",
-    date: "2023-05-20",
-    status: "Processing",
-    total: 1299,
-    paymentMethod: "Cash on Delivery",
-    shippingAddress: {
-      name: "John Doe",
-      addressLine1: "123 Main Street",
-      addressLine2: "Apt 4B",
-      city: "New York",
-      state: "NY",
-      pincode: "10001",
-      phone: "+1 (123) 456-7890",
-    },
-    items: [
-      {
-        id: "5",
-        name: "Women's Running Shoes",
-        price: 1299,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-    timeline: [
-      { status: "Order Placed", date: "May 20, 2023", time: "03:15 PM" },
-      { status: "Processing", date: "May 21, 2023", time: "09:30 AM" },
-    ],
-  },
-  ORD12348: {
-    id: "ORD12348",
-    date: "2024-01-01",
-    status: "Pending",
-    total: 999,
-    paymentMethod: "Credit Card",
-    shippingAddress: {
-      name: "Jane Smith",
-      addressLine1: "456 Oak Avenue",
-      addressLine2: null,
-      city: "Los Angeles",
-      state: "CA",
-      pincode: "90001",
-      phone: "+1 (310) 555-1212",
-    },
-    items: [
-      {
-        id: "9",
-        name: "Smart Watch",
-        price: 999,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-    timeline: [{ status: "Order Placed", date: "January 1, 2024", time: "12:00 PM" }],
-  },
-  ORD12349: {
-    id: "ORD12349",
-    date: "2024-01-05",
-    status: "Shipped",
-    total: 499,
-    paymentMethod: "PayPal",
-    shippingAddress: {
-      name: "Alice Johnson",
-      addressLine1: "789 Pine Lane",
-      addressLine2: "Unit 10",
-      city: "Chicago",
-      state: "IL",
-      pincode: "60601",
-      phone: "+1 (773) 555-3434",
-    },
-    items: [
-      {
-        id: "10",
-        name: "Bluetooth Speaker",
-        price: 499,
-        quantity: 1,
-        image: "/placeholder.svg?height=80&width=80",
-      },
-    ],
-    timeline: [
-      { status: "Order Placed", date: "January 5, 2024", time: "09:00 AM" },
-      { status: "Payment Confirmed", date: "January 5, 2024", time: "09:05 AM" },
-      { status: "Shipped", date: "January 6, 2024", time: "03:00 PM" },
-    ],
-  },
-}
+import { useAuth } from "@/components/auth-provider"
+import { serverGetDeliveryAddressData, serverGetOrder } from "@/services/serverApi"
 
 export default function OrderDetailPage({params}: {params: Promise<{ id: string }>}) {
+  const { user } = useAuth()
   const { id } = use(params);
   const router = useRouter()
-  const order = orders[id as keyof typeof orders]
   const [isDownloading, setIsDownloading] = useState(false)
 
   // Add state for upload dialog
@@ -189,10 +29,129 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null)
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null)
   const [selectedVideoPreview, setSelectedVideoPreview] = useState<string | null>(null)
+  const [orderData, setOrderData] = useState<any[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [addressData, setAddressData] = useState<any>({})
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
-  if (!order) {
+  // Define getOrderData as a useCallback to prevent recreation on every render
+  const getOrderData = useCallback(async () => {
+    if (!user?._id) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const res = await serverGetOrder(user._id.toString());
+      const addressRes = await serverGetDeliveryAddressData(user._id.toString());
+      if (res?.data) {
+        setOrderData(res.data);
+        setAddressData(addressRes.deliveryAddressData?.[0]);
+      } else {
+        setOrderData([]);
+        setAddressData([]);
+      }
+    } catch (error) {
+      console.log(error);
+      setOrderData([]);
+      setAddressData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?._id, id]); // Include both user._id and id as dependencies
+
+  // Single useEffect that runs once when component mounts and when dependencies change
+  useEffect(() => {
+    if (user?._id) {
+      getOrderData();
+    }
+  }, [user?._id, id, getOrderData]);
+
+  const findOrderData = orderData?.find((item: any) => item?._id?.toString() === id);
+
+  // Display skeleton loader while loading
+  if (loading) {
+    return (
+      <div className="w-full px-4 py-8 md:px-6 md:py-12">
+        <div className="mb-8">
+          <div className="w-24 h-10 rounded-md bg-gray-200 animate-pulse"></div>
+        </div>
+
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-8 w-48 bg-gray-200 rounded-md animate-pulse"></div>
+          <div className="h-6 w-24 bg-gray-200 rounded-full animate-pulse"></div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Order Items Skeleton */}
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+              <div className="p-6 flex flex-row items-center">
+                <div className="h-6 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+              </div>
+              <div className="p-6 pt-0">
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="h-20 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 w-3/4 bg-gray-200 rounded-md animate-pulse"></div>
+                        <div className="h-4 w-1/4 bg-gray-200 rounded-md animate-pulse"></div>
+                        <div className="h-5 w-1/5 bg-gray-200 rounded-md animate-pulse"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            {/* Order Summary Skeleton */}
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+              <div className="p-6 flex flex-row items-center">
+                <div className="h-6 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+              </div>
+              <div className="p-6 pt-0">
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex justify-between">
+                      <div className="h-4 w-1/3 bg-gray-200 rounded-md animate-pulse"></div>
+                      <div className="h-4 w-1/4 bg-gray-200 rounded-md animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Address Skeleton */}
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+              <div className="p-6 flex flex-row items-center">
+                <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse"></div>
+              </div>
+              <div className="p-6 pt-0">
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-4 w-full bg-gray-200 rounded-md animate-pulse"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions Skeleton */}
+            <div className="flex flex-col gap-2">
+              <div className="h-10 w-full bg-gray-200 rounded-md animate-pulse"></div>
+              <div className="h-10 w-full bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Now check if order exists - AFTER defining function and useEffect
+  if (!findOrderData) {
     return (
       <div className="w-full px-4 py-8 md:px-6 md:py-12">
         <div className="flex flex-col items-center justify-center py-12">
@@ -209,7 +168,7 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
   }
 
   // Calculate subtotal
-  const subtotal = order.items.reduce((total, item) => total + item.price * item.quantity, 0)
+  const subtotal = findOrderData?.productDetails?.reduce((total: number, item: any) => total + item?.product?.price * item?.qty, 0)
 
   // Calculate shipping (free over ₹500)
   const shipping = subtotal > 500 ? 0 : 50
@@ -235,7 +194,7 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Invoice ${order.id}</title>
+          <title>Invoice ${findOrderData?._id}</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -289,23 +248,20 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
         <body>
           <div class="invoice-header">
             <div class="invoice-title">INVOICE</div>
-            <div>ShopEase</div>
+            <div>VR Fashion</div>
           </div>
           
           <div>
-            <strong>Order ID:</strong> ${order.id}<br>
-            <strong>Date:</strong> ${new Date(order.date).toLocaleDateString()}<br>
-            <strong>Status:</strong> ${order.status}<br>
-            <strong>Payment Method:</strong> ${order.paymentMethod}
+            <strong>Payment ID:</strong> ${findOrderData?.paymentId}<br>
+            <strong>Date:</strong> ${new Date(findOrderData?.createdAt).toLocaleDateString()}<br>
+            <strong>Status:</strong> ${findOrderData?.status}<br>
           </div>
           
           <div class="section-title">BILL TO:</div>
           <div class="address-details">
-            ${order.shippingAddress.name}<br>
-            ${order.shippingAddress.addressLine1}<br>
-            ${order.shippingAddress.addressLine2 ? order.shippingAddress.addressLine2 + "<br>" : ""}
-            ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.pincode}<br>
-            ${order.shippingAddress.phone}
+            ${addressData?.addressFirst}<br>
+            ${addressData?.addressSecond ? addressData?.addressSecond + "<br>" : ""}
+            ${addressData?.area}, ${addressData?.landmark}, ${addressData?.country}, ${addressData?.state}, ${addressData?.city}, ${addressData?.pinCode}<br>
           </div>
           
           <div class="section-title">ITEMS:</div>
@@ -319,14 +275,13 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
               </tr>
             </thead>
             <tbody>
-              ${order.items
-                .map(
-                  (item) => `
+              ${findOrderData?.productDetails?.map(
+                  (item: any) => `
                 <tr>
-                  <td>${item.name}</td>
-                  <td>₹${item.price.toLocaleString()}</td>
-                  <td>${item.quantity}</td>
-                  <td>₹${(item.price * item.quantity).toLocaleString()}</td>
+                  <td>${item?.product?.name}</td>
+                  <td>₹${item?.product?.price?.toLocaleString()}</td>
+                  <td>${item?.qty}</td>
+                  <td>₹${(item?.product?.price * item?.qty)?.toLocaleString()}</td>
                 </tr>
               `,
                 )
@@ -335,7 +290,7 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
             <tfoot>
               <tr>
                 <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
-                <td>₹${subtotal.toLocaleString()}</td>
+                <td>₹${subtotal?.toLocaleString()}</td>
               </tr>
               <tr>
                 <td colspan="3" style="text-align: right;"><strong>Shipping:</strong></td>
@@ -343,13 +298,13 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
               </tr>
               <tr class="total-row">
                 <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
-                <td>₹${order.total.toLocaleString()}</td>
+                <td>₹${findOrderData?.totalAmount?.toLocaleString()}</td>
               </tr>
             </tfoot>
           </table>
           
           <div class="footer">
-            Thank you for shopping with ShopEase!<br>
+            Thank you for shopping with VR Fashion!<br>
             For any queries, please contact support@shopease.com
           </div>
         </body>
@@ -411,12 +366,12 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
       </div>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold md:text-3xl">Order #{order.id}</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Order #{findOrderData?.id}</h1>
         <Badge
-          variant={order.status === "Delivered" ? "default" : order.status === "Processing" ? "secondary" : "outline"}
+          variant={findOrderData?.status === "Delivered" ? "default" : findOrderData?.status === "Processing" ? "secondary" : "outline"}
           className="text-sm px-3 py-1"
         >
-          {order.status}
+          {findOrderData?.status}
         </Badge>
       </div>
 
@@ -429,49 +384,24 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                {findOrderData?.productDetails?.map((item: any, index: number) => (
+                  <div key={index} className="flex gap-4">
                     <div className="relative h-20 w-20 overflow-hidden rounded-md border">
-                      <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+                      <Image src={item?.product?.image?.[0]?.path || "/placeholder.svg"} alt={item?.product?.name} fill className="object-cover" />
                     </div>
 
                     <div className="flex flex-1 flex-col justify-between">
                       <div>
-                        <Link href={`/product/${item.id}`} className="font-medium hover:underline">
-                          {item.name}
+                        <Link href={`/product/${item?.product?._id}`} className="font-medium hover:underline">
+                          {item?.product?.name}
                         </Link>
-                        <div className="mt-1 text-sm text-muted-foreground">Quantity: {item.quantity}</div>
+                        <div className="mt-1 text-sm text-muted-foreground">Quantity: {item?.qty}</div>
                       </div>
 
-                      <div className="font-medium">₹{item.price.toLocaleString()}</div>
+                      <div className="font-medium">₹{item?.product?.price?.toLocaleString()}</div>
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Order Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-muted"></div>
-                <div className="space-y-6">
-                  {order.timeline.map((event, index) => (
-                    <div key={index} className="relative flex gap-4">
-                      <div className="absolute left-4 top-2 -ml-2 h-4 w-4 rounded-full bg-primary"></div>
-                      <div className="ml-8">
-                        <h4 className="font-medium">{event.status}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {event.date} at {event.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -487,22 +417,18 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Order Date</span>
-                  <span>{new Date(order.date).toLocaleDateString()}</span>
+                  <span>{new Date(findOrderData?.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Order ID</span>
-                  <span>{order.id}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Payment Method</span>
-                  <span>{order.paymentMethod}</span>
+                  <span className="text-muted-foreground">Payment ID</span>
+                  <span>{findOrderData?.paymentId}</span>
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>₹{subtotal.toLocaleString()}</span>
+                  <span>₹{subtotal?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
@@ -513,7 +439,7 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
 
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total</span>
-                  <span>₹{order.total.toLocaleString()}</span>
+                  <span>₹{findOrderData?.totalAmount?.toLocaleString()}</span>
                 </div>
               </div>
             </CardContent>
@@ -527,26 +453,22 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
             </CardHeader>
             <CardContent>
               <div className="space-y-1">
-                <p className="font-medium">{order.shippingAddress.name}</p>
-                <p>{order.shippingAddress.addressLine1}</p>
-                {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
+                {/* <p className="font-medium">{addressData?.name}</p> */}
+                <p>{addressData?.addressFirst}</p>
+                {addressData?.addressSecond && <p>{addressData?.addressSecond}</p>}
                 <p>
-                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.pincode}
+                  {addressData?.area}, {addressData?.landmark}, {addressData?.country}, {addressData?.state}, {addressData?.city}, {addressData?.pinCode}
                 </p>
-                <p className="pt-1">{order.shippingAddress.phone}</p>
+                {/* <p className="pt-1">{order.shippingAddress.phone}</p> */}
               </div>
             </CardContent>
           </Card>
 
           {/* Actions */}
           <div className="flex flex-col gap-2">
-            <Button variant="outline" className="w-full">
-              <Truck className="mr-2 h-4 w-4" />
-              Track Order
-            </Button>
 
             {/* Conditionally render Cancel Order button when status is Pending */}
-            {order.status === "Pending" && (
+            {findOrderData?.status === "Pending" && (
               <Button variant="outline" className="w-full text-destructive hover:text-destructive">
                 <X className="mr-2 h-4 w-4" />
                 Cancel Order
@@ -554,7 +476,7 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
             )}
 
             {/* Conditionally render Upload Unloading button when status is Shipped */}
-            {order.status === "Shipped" && (
+            {findOrderData?.status === "Shipped" && (
               <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
@@ -603,11 +525,6 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
                 </DialogContent>
               </Dialog>
             )}
-
-            <Button variant="outline" className="w-full">
-              <Package className="mr-2 h-4 w-4" />
-              Return or Replace Items
-            </Button>
 
             <Button variant="outline" className="w-full" onClick={downloadInvoice} disabled={isDownloading}>
               <Download className="mr-2 h-4 w-4" />
