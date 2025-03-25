@@ -62,7 +62,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-medium">Our Location</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    123 Commerce Street, Business District, City - 123456
+                    A-34, 2nd Floor Laxmidhara Complex, Baroda Pristage, Varachha Road, Surat - 395006, Gujrat, India.
                   </p>
                 </div>
               </div>
@@ -73,8 +73,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-medium">Email Us</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">support@shopease.com</p>
-                  <p className="text-sm text-muted-foreground">info@shopease.com</p>
+                  <p className="mt-1 text-sm text-muted-foreground">vrfashionjewellery0044@gmail.com</p>
+                  {/* <p className="text-sm text-muted-foreground">info@shopease.com</p> */}
                 </div>
               </div>
 
@@ -84,8 +84,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-medium">Call Us</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">+1 (123) 456-7890</p>
-                  <p className="text-sm text-muted-foreground">+1 (987) 654-3210</p>
+                  <p className="mt-1 text-sm text-muted-foreground">+91 8141851456</p>
+                  {/* <p className="text-sm text-muted-foreground">+1 (987) 654-3210</p> */}
                 </div>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function ContactPage() {
       <div className="mt-12">
         <div className="aspect-[16/9] w-full overflow-hidden rounded-lg">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d387193.30596552044!2d-74.25986548248684!3d40.69714941932609!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c24fa5d33f083b%3A0xc80b8f06e177fe62!2sNew%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2sin!4v1647427070895!5m2!1sen!2sin"
+            src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d3719.5203815559603!2d72.85392052549433!3d21.211203680484175!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1s%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20A-34%2C%202nd%20Floor%20Laxmidhara%20Complex%2C%20Baroda%20Pristage%2C%20Varachha%20Road%2C%20Surat%20-%20395006%2C%20Gujrat%2C%20India.!5e0!3m2!1sen!2sin!4v1742915212159!5m2!1sen!2sin"
             width="100%"
             height="100%"
             style={{ border: 0 }}

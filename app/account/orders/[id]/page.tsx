@@ -305,7 +305,7 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
           
           <div class="footer">
             Thank you for shopping with VR Fashion!<br>
-            For any queries, please contact support@shopease.com
+            For any queries, please contact vrfashionjewellery0044@gmail.com
           </div>
         </body>
         </html>

@@ -50,7 +50,7 @@ export default function Header() {
     { href: "/", label: "Home" },
     { href: "/shop", label: "Shop" },
     { href: "/categories", label: "Categories" },
-    { href: "/about", label: "About Us" },
+    // { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact Us" },
   ]
 
@@ -138,7 +138,7 @@ export default function Header() {
                         {link.href === "/" && <Home className="h-5 w-5 text-primary" />}
                         {link.href === "/shop" && <ShoppingBag className="h-5 w-5 text-primary" />}
                         {link.href === "/categories" && <Grid3X3 className="h-5 w-5 text-primary" />}
-                        {link.href === "/about" && <Info className="h-5 w-5 text-primary" />}
+                        {/* {link.href === "/about" && <Info className="h-5 w-5 text-primary" />} */}
                         {link.href === "/contact" && <Phone className="h-5 w-5 text-primary" />}
                         <span>{link.label}</span>
                       </Link>
