@@ -11,7 +11,7 @@ import { AuthProvider } from "@/components/auth-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ShopEase - Your One-Stop Shopping Destination",
+  title: "VR Fashion - Your One-Stop Shopping Destination",
   description: "Find the best products at the best prices",
 }
 
