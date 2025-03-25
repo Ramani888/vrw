@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { useState, useRef, useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
-import { serverGetOrder } from "@/services/serverApi"
+import { serverGetOrder, serverOrderStatus, serverOrderUnloading, serverRefundPayment, serverUploadUnloadingImage, serverUploadUnloadingVideo } from "@/services/serverApi"
 import { useAuth } from "@/components/auth-provider"
 import { set } from "zod"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -51,34 +51,62 @@ export default function OrdersPage() {
   }
 
   // Function to handle media submission
-  const handleSubmitMedia = () => {
-    // In a real application, you would upload the files to a server here
-    console.log("Uploading image:", selectedImage)
-    console.log("Uploading video:", selectedVideo)
-    console.log("For order:", currentOrderId)
+  const handleSubmitMedia = async () => {
+    try {
+      setLoading(true);
+      const rawData: any = {
+        orderId: currentOrderId,
+      };
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append('image', selectedImage);
+        const res = await serverUploadUnloadingImage(formData);
+        rawData.imageUrl = res?.imageUrl;
+      }
 
-    // Close the dialog after submission
-    setIsUploadDialogOpen(false)
+      if (selectedVideo) {
+        const formData = new FormData();
+        formData.append('video', selectedVideo)
+        const res = await serverUploadUnloadingVideo(formData);
+        rawData.videoUrl = res?.videoUrl;
+      }
 
-    // Reset selected media
-    setSelectedImage(null)
-    setSelectedVideo(null)
-    setSelectedImagePreview(null)
-    setSelectedVideoPreview(null)
-    setCurrentOrderId(null)
+      await serverOrderUnloading(rawData);
+      setIsUploadDialogOpen(false)
+      getOrderData();
 
-    // Show success message
-    alert("Media uploaded successfully!")
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      console.error(error)
+    }
   }
 
   // Function to handle order cancellation
-  const handleCancelOrder = (orderId: string) => {
+  const handleCancelOrder = (orderId: string, paymentId: string, totalAmount: number) => {
     if (confirm("Are you sure you want to cancel this order?")) {
-      // In a real application, you would make an API call to cancel the order
-      console.log("Cancelling order:", orderId)
-      alert("Order cancelled successfully!")
+      handleOrderCancel(orderId, paymentId, totalAmount);
     }
   }
+
+  const handleOrderCancel = async (orderId: string, paymentId: string, totalAmount: number) => {
+    try {
+      setLoading(true);
+      await serverOrderStatus(orderId, 'Cancelled');
+
+      const rawData = {
+        paymentId: paymentId,
+        payment: totalAmount,
+      };
+
+      await serverRefundPayment(rawData);
+      getOrderData();
+      setLoading(false);
+    } catch (e) {
+      console.log("Error", e);
+      setLoading(false);
+    }
+  };
 
   // Function to open upload dialog
   const openUploadDialog = (orderId: string) => {
@@ -102,6 +130,15 @@ export default function OrdersPage() {
   useEffect(() => {
     getOrderData();
   }, [user])
+
+  useEffect(() => {
+    // Reset selected media
+    setSelectedImage(null)
+    setSelectedVideo(null)
+    setSelectedImagePreview(null)
+    setSelectedVideoPreview(null)
+    setCurrentOrderId(null)
+  }, [isUploadDialogOpen])
 
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12">
@@ -129,7 +166,7 @@ export default function OrdersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Array(3).fill(0).map((_, index) => (
+                    {Array(5).fill(0).map((_, index) => (
                       <TableRow key={index}>
                         <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -246,7 +283,7 @@ export default function OrdersPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => handleCancelOrder(order?._id)}
+                                onClick={() => handleCancelOrder(order?._id, order?.paymentId, order?.totalAmount)}
                               >
                                 <X className="mr-2 h-4 w-4" />
                                 Cancel
@@ -312,7 +349,7 @@ export default function OrdersPage() {
                         <Button
                           variant="outline"
                           className="w-full text-destructive hover:text-destructive"
-                          onClick={() => handleCancelOrder(order?._id)}
+                          onClick={() => handleCancelOrder(order?._id, order?.paymentId, order?.totalAmount)}
                         >
                           <X className="mr-2 h-4 w-4" />
                           Cancel Order
@@ -333,47 +370,49 @@ export default function OrdersPage() {
         </div>
       )}
       {/* Upload Media Dialog */}
-      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload Unloading Media</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="image">Upload Image</Label>
-              <Input ref={imageInputRef} id="image" type="file" accept="image/*" onChange={handleImageSelect} />
-              {selectedImagePreview && (
-                <div className="mt-2 relative aspect-video rounded-md overflow-hidden border">
-                  <Image
-                    src={selectedImagePreview || "/placeholder.svg"}
-                    alt="Selected image"
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-              )}
-            </div>
+      {isUploadDialogOpen && (
+        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Upload Unloading Media</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="image">Upload Image</Label>
+                <Input ref={imageInputRef} id="image" type="file" accept="image/*" onChange={handleImageSelect} />
+                {selectedImagePreview && (
+                  <div className="mt-2 relative aspect-video rounded-md overflow-hidden border">
+                    <Image
+                      src={selectedImagePreview || "/placeholder.svg"}
+                      alt="Selected image"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="video">Upload Video</Label>
-              <Input ref={videoInputRef} id="video" type="file" accept="video/*" onChange={handleVideoSelect} />
-              {selectedVideoPreview && (
-                <div className="mt-2 rounded-md overflow-hidden border">
-                  <video src={selectedVideoPreview} controls className="w-full h-auto max-h-[200px]" />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="video">Upload Video</Label>
+                <Input ref={videoInputRef} id="video" type="file" accept="video/*" onChange={handleVideoSelect} />
+                {selectedVideoPreview && (
+                  <div className="mt-2 rounded-md overflow-hidden border">
+                    <video src={selectedVideoPreview} controls className="w-full h-auto max-h-[200px]" />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={handleSubmitMedia} disabled={!selectedImage && !selectedVideo}>
-              Submit
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            <div className="flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={handleSubmitMedia} disabled={!selectedImage && !selectedVideo}>
+                Submit
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

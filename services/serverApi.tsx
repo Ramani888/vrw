@@ -363,10 +363,10 @@ export const serverCapturePayment = async (paymentId: string, payment: number) =
   return res
 }
 
-export const serverRefundPayment = async (paymentId: string, payment: number) => {
-  const res = await serverRequest('/refund/payment', 'POST', {paymentId, payment}, true);
-  return res
-}
+// export const serverRefundPayment = async (paymentId: string, payment: number) => {
+//   const res = await serverRequest('/refund/payment', 'POST', {paymentId, payment}, true);
+//   return res
+// }
 
 /********** Delivery Address Api **********/
 export const serverGetDeliveryAddressData = async (userId: string) => {
@@ -466,3 +466,33 @@ export const serverRemoveWishlistProduct = async (userId: string, productId: str
   const res = await serverRequest(url, "DELETE", null, true);
   return res;
 };
+
+export const serverUploadUnloadingImage = async (data: any) => {
+  let url = `/unloading/upload/image`;
+  const res = await serverRequest(url, "POST", data, true, true);
+  return res;
+}
+
+export const serverUploadUnloadingVideo = async (data: any) => {
+  let url = `/unloading/upload/video`;
+  const res = await serverRequest(url, "POST", data, true, true);
+  return res;
+}
+
+export const serverOrderUnloading = async (data: any) => {
+  let url = `/unloading`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+}
+
+export const serverOrderStatus = async (orderId: string, status: string) => {
+  let url = `/order/status?orderId=${orderId}&status=${status}`;
+  const res = await serverRequest(url, "PUT", null, true);
+  return res;
+}
+
+export const serverRefundPayment = async (data: any) => {
+  let url = `/refund/payment`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+}
