@@ -1,8 +1,10 @@
 "use Client";
 import React, { useEffect, useState } from 'react'
 import { serverGetAllProduct, serverGetCategory } from '../services/serverApi'
+import { useAuth } from '@/components/auth-provider';
 
 const useCategory = () => {
+    const { user } = useAuth();
     const [categoryData, setCategoryData] = useState([])
     const [loading, setLoading] = useState(false)
     const [productData, setProductData] = useState<any[]>([]);
@@ -20,10 +22,10 @@ const useCategory = () => {
         }
     }
 
-    const getProductData = async () => {
+    const getProductData = async (noLoading?: boolean) => {
         try {
-          setLoading(true)
-          const res = await serverGetAllProduct();
+          setLoading(noLoading ? false : true)
+          const res = await serverGetAllProduct(user?._id?.toString());
           setProductData(res?.data)
           setLoading(false)
         } catch (error) {
@@ -36,12 +38,13 @@ const useCategory = () => {
     useEffect(() => {
         getCategoryData();
         getProductData();
-    }, [])
+    }, [user])
 
     return {
         categoryData,
         loading,
-        productData
+        productData,
+        getProductData
     }
 }
 

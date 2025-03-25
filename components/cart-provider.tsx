@@ -2,94 +2,103 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useAuth } from "@/components/auth-provider"
+import { serverAddToCart, serverAddWishlistProduct, serverGetCartData, serverGetWishlistProduct, serverRemoveToCart, serverRemoveWishlistProduct, serverUpdateCartData } from "@/services/serverApi"
+import { set } from "zod"
 
-type CartItem = {
-  id: string
-  name: string
-  price: number
-  mrp: number
-  image: string
-  quantity: number
-  size?: string | number
-  color?: string
-}
+// export type CartItem = {
+//   id: string
+//   name: string
+//   price: number
+//   mrp: number
+//   image: string
+//   quantity: number
+//   size?: string | number
+//   color?: string
+// }
 
-type WishlistItem = {
-  id: string
-  name: string
-  price: number
-  mrp: number
-  image: string
-}
+// export type WishlistItem = {
+//   id: string
+//   name: string
+//   price: number
+//   mrp: number
+//   image: string
+// }
 
 type CartContextType = {
-  cart: CartItem[]
-  wishlist: WishlistItem[]
-  addToCart: (product: Omit<CartItem, "quantity">) => void
+  cartData: any
+  cart: any[]
+  wishlist: any[]
+  addToCart: (product: any) => void
   removeFromCart: (id: string, size?: string | number, color?: string) => void
   updateQuantity: (id: string, quantity: number, size?: string | number, color?: string) => void
   clearCart: () => void
-  addToWishlist: (product: WishlistItem) => void
+  addToWishlist: (product: any) => void
   removeFromWishlist: (id: string) => void
   isInWishlist: (id: string) => boolean
   isInCart: (id: string) => boolean
+  loading: boolean
+  error: string | null
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, showLoginDialog } = useAuth()
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([])
+  const { isAuthenticated, showLoginDialog, user } = useAuth()
+  const [cart, setCart] = useState<any[]>([])
+  const [cartData, setCartData] = useState<any>(null)
+  const [wishlist, setWishlist] = useState<any[]>([])
   const [pendingAction, setPendingAction] = useState<{
     type: "cart" | "wishlist"
     product: any
   } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Load cart and wishlist from localStorage on client side
+  // Load cart and wishlist when user is authenticated
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart")
-    const savedWishlist = localStorage.getItem("wishlist")
+    if (isAuthenticated) {
+      loadCartAndWishlist()
+    } else {
+      // Clear cart and wishlist when logged out
+      setCart([])
+      setWishlist([])
+      setCartData(null)
+    }
+  }, [isAuthenticated])
 
-    if (savedCart) setCart(JSON.parse(savedCart))
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist))
-  }, [])
-
-  // Save cart and wishlist to localStorage when they change
-  useEffect(() => {
-    if (cart.length > 0) localStorage.setItem("cart", JSON.stringify(cart))
-    if (cart.length === 0) localStorage.removeItem("cart")
-
-    if (wishlist.length > 0) localStorage.setItem("wishlist", JSON.stringify(wishlist))
-    if (wishlist.length === 0) localStorage.removeItem("wishlist")
-  }, [cart, wishlist])
+  const loadCartAndWishlist = async () => {
+    if (!isAuthenticated) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const cartRes = await serverGetCartData(String(user?._id));
+      const wishlistRes = await serverGetWishlistProduct(String(user?._id?.toString()));
+      setCart(cartRes?.data?.data)
+      setCartData(cartRes?.data)
+      setWishlist(wishlistRes?.data)
+    } catch (err) {
+      console.error("Failed to load cart or wishlist:", err)
+      setError("Failed to load your cart and wishlist. Please try again later.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Execute pending action after authentication
   useEffect(() => {
     if (isAuthenticated && pendingAction) {
       if (pendingAction.type === "cart") {
-        setCart((prevCart) => {
-          const existingItem = prevCart.find((item) => item.id === pendingAction.product.id)
-          if (existingItem) {
-            return prevCart.map((item) =>
-              item.id === pendingAction.product.id ? { ...item, quantity: item.quantity + 1 } : item,
-            )
-          } else {
-            return [...prevCart, { ...pendingAction.product, quantity: 1 }]
-          }
-        })
+        addToCart(pendingAction.product)
       } else if (pendingAction.type === "wishlist") {
-        setWishlist((prevWishlist) => {
-          const existingItem = prevWishlist.find((item) => item.id === pendingAction.product.id)
-          if (existingItem) return prevWishlist
-          return [...prevWishlist, pendingAction.product]
-        })
+        addToWishlist(pendingAction.product)
       }
       setPendingAction(null)
     }
   }, [isAuthenticated, pendingAction])
 
-  const addToCart = (product: Omit<CartItem, "quantity">) => {
+  const addToCart = async (product: any) => {
     if (!isAuthenticated) {
       // Save pending action and show login dialog
       setPendingAction({
@@ -100,35 +109,87 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id)
-      if (existingItem) {
-        return prevCart.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
-      } else {
-        return [...prevCart, { ...product, quantity: 1 }]
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const bodyData = {
+        userId: user?._id?.toString(),
+        productId: product?._id?.toString(),
+        qty: 1
       }
-    })
+      await serverAddToCart(bodyData);
+      loadCartAndWishlist();
+    } catch (err) {
+      console.error("Failed to add item to cart:", err)
+      setError("Failed to add item to cart. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const removeFromCart = (id: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
+  const removeFromCart = async (id: string) => {
+    if (!isAuthenticated) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      await serverRemoveToCart(String(user?._id?.toString()), id);
+      loadCartAndWishlist();
+    } catch (err) {
+      console.error("Failed to remove item from cart:", err)
+      setError("Failed to remove item from cart. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = async (id: string, quantity: number) => {
+    if (!isAuthenticated) return
+    
     if (quantity <= 0) {
       removeFromCart(id)
       return
     }
 
-    setCart((prevCart) => prevCart.map((item) => (item.id === id ? { ...item, quantity } : item)))
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const bodyData = {
+        qty: quantity
+      }
+      await serverUpdateCartData(id, bodyData);
+      loadCartAndWishlist();
+    } catch (err) {
+      console.error("Failed to update item quantity:", err)
+      setError("Failed to update item quantity. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const clearCart = () => {
-    setCart([])
-    localStorage.removeItem("cart")
+  const clearCart = async () => {
+    if (!isAuthenticated) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      cart?.forEach(async (item: any) => {
+        await serverRemoveToCart(String(user?._id?.toString()), item?.productId);
+      });
+      loadCartAndWishlist();
+    } catch (err) {
+      console.error("Failed to clear cart:", err)
+      setError("Failed to clear your cart. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const addToWishlist = (product: WishlistItem) => {
+  const addToWishlist = async (product: any) => {
     if (!isAuthenticated) {
       // Save pending action and show login dialog
       setPendingAction({
@@ -139,28 +200,53 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    setWishlist((prevWishlist) => {
-      const existingItem = prevWishlist.find((item) => item.id === product.id)
-      if (existingItem) return prevWishlist
-      return [...prevWishlist, product]
-    })
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const bodyData = {
+        userId: user?._id?.toString(),
+        productId: product?._id?.toString()
+      }
+      await serverAddWishlistProduct(bodyData);
+      loadCartAndWishlist();
+    } catch (err) {
+      console.error("Failed to add item to wishlist:", err)
+      setError("Failed to add item to wishlist. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const removeFromWishlist = (id: string) => {
-    setWishlist((prevWishlist) => prevWishlist.filter((item) => item.id !== id))
+  const removeFromWishlist = async (id: string) => {
+    if (!isAuthenticated) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      await serverRemoveWishlistProduct(String(user?._id?.toString()), id);
+      loadCartAndWishlist();
+    } catch (err) {
+      console.error("Failed to remove item from wishlist:", err)
+      setError("Failed to remove item from wishlist. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const isInWishlist = (id: string) => {
-    return wishlist.some((item) => item.id === id)
+    return Array.isArray(wishlist) && wishlist.some((item) => item?.id === id)
   }
 
   const isInCart = (id: string) => {
-    return cart.some((item) => item.id === id)
+    return Array.isArray(cart) && cart.some((item) => item?.id === id)
   }
 
   return (
     <CartContext.Provider
       value={{
+        cartData,
         cart,
         wishlist,
         addToCart,
@@ -171,6 +257,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromWishlist,
         isInWishlist,
         isInCart,
+        loading,
+        error
       }}
     >
       {children}

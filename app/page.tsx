@@ -12,7 +12,8 @@ export default function Home() {
     loading,
     categoryData,
     adsPosterData,
-    pramotionProductData
+    pramotionProductData,
+    getPramotionProductData
   } = useHome();
 
   if (loading) {
@@ -82,7 +83,7 @@ export default function Home() {
         <div className="mb-8">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {pramotionProductData?.map((product, index) => (
-              <ProductCard key={index} {...product} />
+              <ProductCard key={index} product={product} getData={(noLoading) => getPramotionProductData(noLoading)} />
             ))}
           </div>
         </div>

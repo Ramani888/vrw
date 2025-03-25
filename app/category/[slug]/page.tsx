@@ -30,7 +30,8 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const {
     categoryData,
     loading,
-    productData
+    productData,
+    getProductData
   } = useCategory();
   const { slug } = use(params);
   // const { slug } = params
@@ -220,7 +221,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredProducts.map((product, index) => (
-              <ProductCard key={index} {...product} />
+              <ProductCard key={index} product={product} getData={(noLoading) => getProductData(noLoading)} />
             ))}
           </div>
 

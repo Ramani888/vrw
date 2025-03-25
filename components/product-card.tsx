@@ -7,32 +7,26 @@ import { Heart, ShoppingCart, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "./cart-provider"
 import { Badge } from "@/components/ui/badge"
+import { get } from "http"
 
 interface ProductCardProps {
-  _id: string
-  name: string
-  description: string
-  price: number
-  mrp: number
-  image: {_id: string, path: string}[]
-  category: string
+  product: any
+  getData: (noLoading?: boolean) => void
 }
 
-export default function ProductCard({ _id, name, description, price, mrp, image, category }: ProductCardProps) {
-  const { addToCart, addToWishlist, isInWishlist, isInCart } = useCart()
-  const [isWishlisted, setIsWishlisted] = useState(isInWishlist(_id))
-  const [isAddedToCart, setIsAddedToCart] = useState(isInCart(_id))
+export default function ProductCard({ product, getData }: ProductCardProps) {
+  const { addToCart, addToWishlist } = useCart()
 
-  const discount = Math.round(((mrp - price) / mrp) * 100)
+  const discount = Math.round(((product?.mrp - product?.price) / product?.mrp) * 100)
 
   const handleAddToWishlist = () => {
-    addToWishlist({ id: _id, name, price, mrp, image: image[0]?.path })
-    setIsWishlisted(true)
+    addToWishlist(product);
+    getData(true);
   }
 
   const handleAddToCart = () => {
-    addToCart({ id: _id, name, price, mrp, image: image[0]?.path })
-    setIsAddedToCart(true)
+    addToCart(product);
+    getData(true);
   }
 
   return (
@@ -40,11 +34,11 @@ export default function ProductCard({ _id, name, description, price, mrp, image,
       {discount > 0 && <Badge className="absolute left-2 top-2 z-10">{discount}% OFF</Badge>}
 
       <div className="relative">
-        <Link href={`/product/${_id}`} className="block overflow-hidden">
+        <Link href={`/product/${product?._id}`} className="block overflow-hidden">
           <div className="aspect-square overflow-hidden">
             <Image
-              src={image[0]?.path || "/placeholder.svg"}
-              alt={name}
+              src={product?.image[0]?.path || "/placeholder.svg"}
+              alt={product?.name}
               width={300}
               height={300}
               className="h-full w-full object-cover transition-transform group-hover:scale-105"
@@ -58,13 +52,13 @@ export default function ProductCard({ _id, name, description, price, mrp, image,
             variant="secondary"
             size="icon"
             onClick={handleAddToCart}
-            className={`rounded-full shadow-md ${isAddedToCart ? "bg-primary text-primary-foreground" : "bg-white"}`}
+            className={`rounded-full shadow-md ${product?.isCart ? "bg-primary text-primary-foreground" : "bg-white"}`}
           >
-            <ShoppingCart className={`h-4 w-4 ${isAddedToCart ? "fill-primary-foreground" : ""}`} />
+            <ShoppingCart className={`h-4 w-4 ${product?.isCart ? "fill-primary-foreground" : ""}`} />
             <span className="sr-only">Add to Cart</span>
           </Button>
 
-          <Link href={`/product/${_id}`}>
+          <Link href={`/product/${product?._id}`}>
             <Button variant="secondary" size="icon" className="rounded-full shadow-md bg-white">
               <Eye className="h-4 w-4" />
               <span className="sr-only">View Details</span>
@@ -77,19 +71,19 @@ export default function ProductCard({ _id, name, description, price, mrp, image,
             className="rounded-full shadow-md bg-white"
             onClick={handleAddToWishlist}
           >
-            <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
+            <Heart className={`h-4 w-4 ${product?.isWishlist ? "fill-red-500 text-red-500" : ""}`} />
             <span className="sr-only">Add to wishlist</span>
           </Button>
         </div>
       </div>
 
       <div className="p-4">
-        <h3 className="font-medium line-clamp-1">{name}</h3>
-        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{description}</p>
+        <h3 className="font-medium line-clamp-1">{product?.name}</h3>
+        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product?.description}</p>
 
         <div className="mt-2 flex items-center gap-2">
-          <span className="font-medium">₹{price.toLocaleString()}</span>
-          {mrp > price && <span className="text-sm text-muted-foreground line-through">₹{mrp.toLocaleString()}</span>}
+          <span className="font-medium">₹{product?.price?.toLocaleString()}</span>
+          {product?.mrp > product?.price && <span className="text-sm text-muted-foreground line-through">₹{product?.mrp?.toLocaleString()}</span>}
         </div>
       </div>
     </div>

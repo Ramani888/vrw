@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, use } from "react"
 import Image from "next/image"
-import { Heart, ShoppingCart, Truck, Shield, RotateCcw } from "lucide-react"
+import { Heart, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCart } from "@/components/cart-provider"
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Loader } from "@/components/ui/loader"
 import { serverGetProductByCategoryId, serverGetProductById } from "@/services/serverApi"
 import ProductCard from "@/components/product-card"
+import { useAuth } from "@/components/auth-provider"
 
 // Enhanced product type with colors, sizes, and videos
 type ProductSize = string | number
@@ -69,79 +70,86 @@ type RelatedProduct = {
 }
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const { user } = useAuth()
   // const { id } = params
-  const [loading, setLoading] = useState(true);
-  const [productDetail, setProductDetail] = useState<any>({});
-  const [relatedProduct, setRelatedProduct] = useState<any>([]);
-
+  const { id } = use(params);
+  const [loading, setLoading] = useState(true)
+  const [productDetail, setProductDetail] = useState<any>({})
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([])
   const [quantity, setQuantity] = useState(1)
-  const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
+  const [selectedSize, setSelectedSize] = useState<string | number | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const { addToCart, addToWishlist, isInWishlist, isInCart } = useCart()
-  const [isWishlisted, setIsWishlisted] = useState(false)
+  const { addToCart, addToWishlist } = useCart()
 
-  const getProductById = async () => {
+  const getProductById = async (noLoading?: boolean) => {
     try {
-      setLoading(true)
-      const res = await serverGetProductById(id ?? '');
-      const relatedProduct = await serverGetProductByCategoryId(res?.data?.[0]?.categoryId ?? '');
-      setRelatedProduct(relatedProduct?.data);
-      setProductDetail(res?.data[0])
-      setLoading(false)
-    }
-    catch (error) { 
-      console.error(error);
+      if (!noLoading) setLoading(true)
+      
+      const res = await serverGetProductById(id, user?._id?.toString())
+      if (res?.data?.[0]) {
+        setProductDetail(res.data[0])
+        
+        // Fetch related products based on category
+        if (res.data[0]?.categoryId) {
+          const relatedData = await serverGetProductByCategoryId(
+            res.data[0].categoryId, 
+            user?._id?.toString()
+          )
+          setRelatedProducts(relatedData?.data || [])
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch product:", error)
       setProductDetail({})
+    } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
     if (id) {
-      getProductById();
+      getProductById()
     }
-  }, [id])
+  }, [id, user])
+
+  // Handle free size selection automatically
+  useEffect(() => {
+    if (productDetail?.size?.length === 1 && productDetail?.size?.[0] === "Free Size") {
+      setSelectedSize(productDetail.size[0])
+    }
+  }, [productDetail])
 
   const handleAddToWishlist = () => {
     if (!productDetail) return
-
-    addToWishlist({
-      id: productDetail?._id,
-      name: productDetail?.name,
-      price: productDetail?.price,
-      mrp: productDetail?.mrp,
-      image: productDetail?.image[0]?.path,
-    })
-    setIsWishlisted(true)
+    
+    // Add to wishlist
+    addToWishlist(productDetail)
+    
+    // Update local state immediately
+    setProductDetail((prevProduct: any) => ({
+      ...prevProduct,
+      isWishlist: true
+    }))
   }
 
   const handleAddToCart = () => {
     if (!productDetail) return
 
-    if (!selectedSize && productDetail?.size?.length > 0) {
+    if (!selectedSize && productDetail?.size?.length > 0 && productDetail?.size?.[0] !== "Free Size") {
       alert("Please select a size")
       return
     }
 
-    // if (!selectedColor && productDetail?.color?.length > 0) {
-    //   alert("Please select a color")
-    //   return
-    // }
-
-    addToCart({
-      id: productDetail?._id,
-      name: productDetail?.name,
-      price: productDetail?.price,
-      mrp: productDetail?.mrp,
-      image: productDetail?.image?.[0]?.path,
-      // @ts-ignore - We'll update the cart provider type later
-      size: selectedSize,
-      // @ts-ignore - We'll update the cart provider type later
-      // color: selectedColor?.name,
-    })
+    // Add to cart with quantity
+    addToCart({...productDetail, quantity})
+    
+    // Update local state immediately
+    setProductDetail((prevProduct: any) => ({
+      ...prevProduct,
+      isCart: true
+    }))
   }
 
   const incrementQuantity = () => {
@@ -163,12 +171,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       videoRef.current.pause()
     }
   }
-
-  useEffect(() => {
-    if (productDetail && productDetail?.size?.length === 1 && productDetail?.size?.[0] === "Free Size") {
-      setSelectedSize(productDetail?.size?.[0] ?? null)
-    }
-  }, [productDetail])
 
   // If loading, show loader
   if (loading) {
@@ -338,15 +340,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <Button
                 className="flex-1"
                 onClick={handleAddToCart}
-                variant={isInCart(productDetail?._id) ? "secondary" : "default"}
-                disabled={productDetail?.size?.length > 0 && productDetail?.size?.[0] !== "Free Size" && !selectedSize}
+                variant={productDetail?.isCart ? "secondary" : "default"}
+                disabled={productDetail?.size?.length > 0 && productDetail?.size?.[0] !== "Free Size" && !selectedSize || productDetail?.isCart}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                {isInCart(productDetail?._id) ? "Added to Cart" : "Add to Cart"}
+                {productDetail?.isCart ? "Added to Cart" : "Add to Cart"}
               </Button>
-              <Button variant="outline" onClick={handleAddToWishlist} disabled={isWishlisted}>
-                <Heart className={`mr-2 h-4 w-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
-                {isWishlisted ? "Wishlisted" : "Add to Wishlist"}
+              <Button variant="outline" onClick={handleAddToWishlist} disabled={productDetail?.isWishlist}>
+                <Heart className={`mr-2 h-4 w-4 ${productDetail?.isWishlist ? "fill-red-500 text-red-500" : ""}`} />
+                {productDetail?.isWishlist ? "Wishlisted" : "Add to Wishlist"}
               </Button>
             </div>
 
@@ -422,12 +424,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       {/* Related Products */}
       <div className="mt-12">
         <h2 className="mb-6 text-2xl font-bold">Related Products</h2>
-        {relatedProduct?.length === 0 ? (
+        {relatedProducts?.length === 0 ? (
           <Loader text="Loading related products..." />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {relatedProduct?.map((product: any) => (
-              <ProductCard key={product?._id ?? ''} {...product} />
+            {relatedProducts?.map((product: any) => (
+              <ProductCard key={product?._id ?? ''} product={product} getData={(noLoading) => getProductById(noLoading)} />
             ))}
           </div>
         )}

@@ -1,9 +1,9 @@
 import axios, { AxiosError, Method } from "axios";
 import { StatusCodes } from "http-status-codes";
 
-// const serverUrl = "http://localhost:3010/api";
+const serverUrl = "http://localhost:3010/api";
 export const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjYwZjMwNDcxMDEzYmM1MThkMDRmMjkiLCJ1c2VybmFtZSI6IlJhbWFuaSBEaXZ5ZXNoIiwiaWF0IjoxNzE5NjcxMDI1LCJleHAiOjE3MjIyNjMwMjV9.82QOtRboFn1WCIGroahsaFixyG3QNWq5Jr1_v5ra6aA'
-const serverUrl = 'https://vr-fashion-backend.vercel.app/api';
+// const serverUrl = 'https://vr-fashion-backend.vercel.app/api';
 // const serverUrl = 'https://vrfashion.site/api';
 
 const errorCodes = [
@@ -220,15 +220,6 @@ export const serverUpdateProductAction = async (productId: string) => {
   return res;
 }
 
-export const serverGetWishlistProduct = async (userId: string) => {
-  let url = `/wishlist`;
-  if (userId) {
-    url += `?userId=${userId}`;
-  }
-  const res = await serverRequest(url, "GET", null, true);
-  return res;
-};
-
 ////////// Category Api //////////
 export const serverGetCategory = async () => {
   const res = await serverRequest('/category', 'GET', null, true);
@@ -416,5 +407,62 @@ export const serverGetCartData = async (userId: string) => {
     url += `?userId=${userId}`;
   }
   const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
+
+export const serverAddToCart = async (data: any) => {
+  let url = `/cart`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+};
+
+export const serverRemoveToCart = async (userId: string, productId: string) => {
+  let url = `/cart`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  if (productId) {
+    url += `&productId=${productId}`;
+  }
+  const res = await serverRequest(url, "DELETE", null, true);
+  return res;
+};
+
+export const serverUpdateCartData = async (productId: string, data: any) => {
+  let url = `/cart`;
+  if (productId) {
+    url += `?productId=${productId}`;
+  }
+  const res = await serverRequest(url, "PUT", data, true);
+  return res;
+};
+
+
+/********** Wishlist Api **********/
+export const serverGetWishlistProduct = async (userId: string) => {
+  let url = `/wishlist`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+};
+
+export const serverAddWishlistProduct = async (data: any) => {
+  let url = `/wishlist`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+};
+
+
+export const serverRemoveWishlistProduct = async (userId: string, productId: string) => {
+  let url = `/wishlist`;
+  if (userId) {
+    url += `?userId=${userId}`;
+  }
+  if (productId) {
+    url += `&productId=${productId}`;
+  }
+  const res = await serverRequest(url, "DELETE", null, true);
   return res;
 };

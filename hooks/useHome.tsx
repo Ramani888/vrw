@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import { serverGetAdsPosterData, serverGetBanners, serverGetCategory, serverGetPramotionProduct } from '../services/serverApi';
+import { useAuth } from '@/components/auth-provider';
 
 const useHome = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [bannerData, setBannerData] = useState([]);
   const [categoryData, setCategoryData] = useState([])
@@ -36,10 +38,10 @@ const useHome = () => {
     }
   }
 
-  const getPramotionProductData = async () => {
+  const getPramotionProductData = async (noLoading?: boolean) => {
     try {
-      setLoading(true)
-      const res = await serverGetPramotionProduct();
+      setLoading(noLoading ? false : true)
+      const res = await serverGetPramotionProduct(user?._id?.toString());
       setPramotionProductData(res?.data)
       setLoading(false)
     } catch (e) {
@@ -67,14 +69,15 @@ const useHome = () => {
     getCategoryData();
     getAdsPosterData();
     getPramotionProductData();
-  }, []);
+  }, [user]);
 
   return {
     loading,
     bannerData,
     categoryData,
     adsPosterData,
-    pramotionProductData
+    pramotionProductData,
+    getPramotionProductData
   }
 }
 

@@ -12,35 +12,13 @@ import { useAuth } from "@/components/auth-provider"
 
 export default function CartPage() {
   const { user } = useAuth();
-  const { cart, removeFromCart, updateQuantity, clearCart } = useCart()
-  const [loading, setLoading] = useState<boolean>(false);
-  const [cartData, setCartData] = useState<any>(null);
+  const { cart, removeFromCart, updateQuantity, clearCart, cartData, loading } = useCart()
 
   // Handle quantity change
   const handleQuantityChange = (id: string, newQuantity: number, size?: string | number, color?: string) => {
     if (newQuantity < 1) return
     updateQuantity(id, newQuantity, size, color)
-    getCartData(true);
   }
-
-  const getCartData = async (noLoading?: boolean) => {
-    try {
-      setLoading(noLoading ? false : true);
-      const res = await serverGetCartData(String(user?._id?.toString()));
-      setCartData(res?.data);
-      setLoading(false);
-    } catch (error) {
-      setCartData(null);
-      setLoading(false);
-      console.error(error)
-    }
-  }
-
-  useEffect(() => {
-    if (user?._id) {
-      getCartData();
-    }
-  }, [user])
 
   const totalDiscount = cartData?.data?.reduce((accumulator: any, item: any) => {
     const discount =
@@ -206,7 +184,7 @@ export default function CartPage() {
                             <span className="px-3 py-1 border-x">{item?.qty}</span>
                             <button
                               className="px-3 py-1 text-lg"
-                              onClick={() => handleQuantityChange(item?.product?._id, item?.qty - 1, item?.product?.size?.[0], item?.product?.color)}
+                              onClick={() => handleQuantityChange(item?.product?._id, item?.qty + 1, item?.product?.size?.[0], item?.product?.color)}
                             >
                               +
                             </button>

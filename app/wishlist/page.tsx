@@ -6,10 +6,6 @@ import { Heart, Trash, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/components/cart-provider"
 import { Separator } from "@/components/ui/separator"
-import { useEffect, useState } from "react"
-import { set } from "zod"
-import { serverGetWishlistProduct } from "@/services/serverApi"
-import { useAuth } from "@/components/auth-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Skeleton for wishlist item
@@ -30,33 +26,11 @@ const WishlistItemSkeleton = () => (
 );
 
 export default function WishlistPage() {
-  const { user } = useAuth()
-  const { wishlist, removeFromWishlist, addToCart } = useCart()
-  const [loading, setLoading] = useState<boolean>(false);
-  const [wishlistData, setWishlistData] = useState<any[]>([]);
+  const { wishlist, removeFromWishlist, addToCart, loading } = useCart()
 
   const handleAddToCart = (item: any) => {
     addToCart(item)
   }
-
-  const getWishlistData = async () => {
-    try {
-      setLoading(true);
-      const res = await serverGetWishlistProduct(String(user?._id?.toString()));
-      setWishlistData(res?.data);
-      setLoading(false);
-    } catch (error) {
-      setWishlistData([]);
-      setLoading(false);
-      console.error("Error fetching wishlist data", error)
-    }
-  }
-
-  useEffect(() => {
-    if (user?._id) {
-      getWishlistData();
-    }
-  }, [user])
 
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12">
@@ -76,7 +50,7 @@ export default function WishlistPage() {
             </div>
           </div>
         </div>
-      ) : wishlistData?.length === 0 ? (
+      ) : wishlist?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <Heart className="h-16 w-16 text-muted-foreground" />
           <h2 className="mt-4 text-xl font-medium">Your wishlist is empty</h2>
@@ -97,7 +71,7 @@ export default function WishlistPage() {
             <Separator className="my-4" />
 
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {wishlistData?.map((item) => (
+              {wishlist?.map((item) => (
                 <div
                   key={item?._id}
                   className="group relative overflow-hidden rounded-lg border bg-background transition-all hover:shadow-md"
@@ -106,13 +80,13 @@ export default function WishlistPage() {
                     variant="ghost"
                     size="icon"
                     className="absolute right-2 top-2 z-10 bg-background/80 hover:bg-background"
-                    onClick={() => removeFromWishlist(item?._id)}
+                    onClick={() => removeFromWishlist(item?.productId)}
                   >
                     <Trash className="h-4 w-4" />
                     <span className="sr-only">Remove from wishlist</span>
                   </Button>
 
-                  <Link href={`/product/${item?._id}`} className="block overflow-hidden">
+                  <Link href={`/product/${item?.product?._id}`} className="block overflow-hidden">
                     <div className="aspect-square overflow-hidden">
                       <Image
                         src={item?.product?.image?.[0]?.path || "/placeholder.svg"}
@@ -134,9 +108,9 @@ export default function WishlistPage() {
                       )}
                     </div>
 
-                    <Button className="mt-4 w-full" onClick={() => handleAddToCart(item)}>
+                    <Button className="mt-4 w-full" onClick={() => handleAddToCart(item?.product)} disabled={item?.product?.isCart}>
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
+                      {item?.product?.isCart ? "Added to Cart" : "Add to Cart"}
                     </Button>
                   </div>
                 </div>

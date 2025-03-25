@@ -24,7 +24,8 @@ export default function ShopPage() {
   const {
     loading,
     productData,
-    categoryData
+    categoryData,
+    getProductData
   } = useShop();
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -212,7 +213,7 @@ export default function ShopPage() {
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filteredProducts?.map((product, index) => (
-              <ProductCard key={index} {...product} />
+              <ProductCard key={index} product={product} getData={(noLoading) => getProductData(noLoading)} />
             ))}
           </div>
 
