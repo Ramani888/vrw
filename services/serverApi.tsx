@@ -3,8 +3,9 @@ import { StatusCodes } from "http-status-codes";
 
 // const serverUrl = "http://localhost:3010/api";
 export const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NjYwZjMwNDcxMDEzYmM1MThkMDRmMjkiLCJ1c2VybmFtZSI6IlJhbWFuaSBEaXZ5ZXNoIiwiaWF0IjoxNzE5NjcxMDI1LCJleHAiOjE3MjIyNjMwMjV9.82QOtRboFn1WCIGroahsaFixyG3QNWq5Jr1_v5ra6aA'
-const serverUrl = 'https://vr-fashion-backend.vercel.app/api';
+// const serverUrl = 'https://vr-fashion-backend.vercel.app/api';
 // const serverUrl = 'https://vrfashion.site/api';
+const serverUrl = 'https://vrfashionjewelleary.in/api';
 
 const errorCodes = [
   StatusCodes.INTERNAL_SERVER_ERROR,
