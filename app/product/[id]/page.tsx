@@ -70,7 +70,7 @@ type RelatedProduct = {
 }
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   // const { id } = params
   const { id } = use(params);
   const [loading, setLoading] = useState(true)
@@ -81,7 +81,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const { addToCart, addToWishlist } = useCart()
+  const { addToCart, addToWishlist,  } = useCart()
 
   const getProductById = async (noLoading?: boolean) => {
     try {
@@ -128,10 +128,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     addToWishlist(productDetail)
     
     // Update local state immediately
-    setProductDetail((prevProduct: any) => ({
-      ...prevProduct,
-      isWishlist: true
-    }))
+    if (isAuthenticated) {
+      setProductDetail((prevProduct: any) => ({
+        ...prevProduct,
+        isWishlist: true
+      }))
+    }
   }
 
   const handleAddToCart = () => {
@@ -146,10 +148,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     addToCart({...productDetail, quantity})
     
     // Update local state immediately
-    setProductDetail((prevProduct: any) => ({
-      ...prevProduct,
-      isCart: true
-    }))
+    if (isAuthenticated) {
+      setProductDetail((prevProduct: any) => ({
+        ...prevProduct,
+        isCart: true
+      }))
+    }
   }
 
   const incrementQuantity = () => {

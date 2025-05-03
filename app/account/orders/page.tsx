@@ -54,6 +54,11 @@ export default function OrdersPage() {
   const handleSubmitMedia = async () => {
     try {
       setLoading(true);
+      if (!currentOrderId) {
+        console.error("No order ID provided")
+        setLoading(false);
+        return;
+      }
       const rawData: any = {
         orderId: currentOrderId,
       };
@@ -74,7 +79,7 @@ export default function OrdersPage() {
       await serverOrderUnloading(rawData);
       setIsUploadDialogOpen(false)
       getOrderData();
-
+      setCurrentOrderId(null)
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -137,7 +142,6 @@ export default function OrdersPage() {
     setSelectedVideo(null)
     setSelectedImagePreview(null)
     setSelectedVideoPreview(null)
-    setCurrentOrderId(null)
   }, [isUploadDialogOpen])
 
   return (

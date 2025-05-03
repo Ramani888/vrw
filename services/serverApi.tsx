@@ -267,6 +267,12 @@ export const serverUpdateOrderStatus = async (orderId: string, status: string) =
   return res
 }
 
+export const serverCreateOrder = async (data: any) => {
+  let url = `/order`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+};
+
 ////////// Tracking Order Api //////////
 export const serverInsertTrackingDetail = async (data: any) => {
   const res = await serverRequest("/tracking", "POST", data, true);

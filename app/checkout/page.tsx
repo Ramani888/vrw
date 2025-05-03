@@ -17,7 +17,7 @@ import { CreditCard, Wallet, Truck, ShieldCheck, ArrowLeft, Check, MapPin, Plus 
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { serverGetCartData, serverGetDeliveryAddressData, serverGetRewardData } from "@/services/serverApi"
+import { serverCreateOrder, serverGetCartData, serverGetDeliveryAddressData, serverGetRewardData } from "@/services/serverApi"
 import { useAuth } from "@/components/auth-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
@@ -93,7 +93,7 @@ export default function CheckoutPage() {
         // handleRazorpayPayment()
       } else if (paymentMethod === "cod") {
         // Process COD order
-        processOrder("COD")
+        // processOrder("COD")
       } else {
         // Handle other payment methods
         toast({
@@ -127,7 +127,7 @@ export default function CheckoutPage() {
         description: "Purchase from VR Fashion",
         handler: (response: any) => {
           // Handle successful payment
-          processOrder("Razorpay", response.razorpay_payment_id)
+          processOrder("Razorpay", response.razorpay_payment_id, Number(finalPrice))
         },
         prefill: {
           name: user?.name || "",
@@ -162,11 +162,38 @@ export default function CheckoutPage() {
   }
 
   // Process order after successful payment
-  const processOrder = (paymentMethod: string, paymentId?: string) => {
+  const processOrder = async(paymentMethod: string, paymentId: string, finalPrice: number) => {
     setIsProcessingPayment(true)
 
-    // In a real app, you would make an API call to create the order
-    setTimeout(() => {
+    // // In a real app, you would make an API call to create the order
+    // setTimeout(() => {
+    //   // Clear cart
+    //   clearCart()
+
+    //   // Redirect to success page
+    //   router.push(
+    //     `/checkout/success?orderId=ORD${Date.now()}&paymentMethod=${paymentMethod}${paymentId ? `&paymentId=${paymentId}` : ""}`,
+    //   )
+    // }, 1500)
+
+    try {
+      const productData = cartData?.data?.map((item: any) => {
+        return {
+          id: item?.product?._id,
+          qty: item?.qty,
+          price: item?.product?.price,
+          deliveryCharge: item?.product?.deliveryCharge,
+          reward: item?.reward ?? 0,
+        }
+      })
+      const data = {
+        userId: user?._id,
+        totalAmount: finalPrice,
+        product: productData,
+        paymentId: paymentId,
+        isWallet: useWalletBalance
+      };
+      await serverCreateOrder(data);
       // Clear cart
       clearCart()
 
@@ -174,7 +201,9 @@ export default function CheckoutPage() {
       router.push(
         `/checkout/success?orderId=ORD${Date.now()}&paymentMethod=${paymentMethod}${paymentId ? `&paymentId=${paymentId}` : ""}`,
       )
-    }, 1500)
+    } catch (error) {
+      console.error("Error creating order:", error)
+    }
   }
 
   const getCartData = async () => {
@@ -225,7 +254,8 @@ export default function CheckoutPage() {
     }
   }, [user])
 
-  const deliveryCharge = cartData?.totalDeliveryCharge;
+  // const deliveryCharge = cartData?.totalDeliveryCharge;
+  const deliveryCharge = 1;
 
   const totalPrice = cartData?.data?.reduce((accumulator: any, item: any) => {
     return accumulator + item?.product?.mrp * item?.qty;
