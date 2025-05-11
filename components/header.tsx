@@ -33,6 +33,7 @@ import { serverGetRewardData } from "@/services/serverApi"
 export default function Header() {
   const { cart, wishlist } = useCart()
   const { user, isAuthenticated, logout, showLoginDialog } = useAuth()
+  console.log('isAuthenticated:', isAuthenticated)
   const isMobile = useMobile()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(true);
@@ -254,7 +255,7 @@ export default function Header() {
 
         {/* Cart, Wishlist, User */}
         <div className="flex items-center gap-4">
-          <Link href="/wishlist">
+          <Link href={isAuthenticated ? "/wishlist" : "/login"}>
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5" />
               {wishlist.length > 0 && (
@@ -266,7 +267,7 @@ export default function Header() {
             </Button>
           </Link>
 
-          <Link href="/cart">
+          <Link href={isAuthenticated ? "/cart" : "/login"}>
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
               {cart.length > 0 && (
