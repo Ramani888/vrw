@@ -29,6 +29,7 @@ import Image from "next/image"
 import useShop from "@/hooks/useShop"
 import logo from "../public/logo.jpeg";
 import { serverGetRewardData } from "@/services/serverApi"
+import { usePathname, useRouter } from "next/navigation"
 
 export default function Header() {
   const { cart, wishlist } = useCart()
@@ -38,13 +39,16 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(true);
   const [rewardData, setRewardData] = useState<any>(null);
+  const pathname = usePathname();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen)
   }
 
   const handleLoginClick = () => {
-    showLoginDialog()
+    if (pathname !== "/login") {
+      showLoginDialog()
+    }
   }
 
   const navLinks = [
