@@ -116,7 +116,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const bodyData = {
         userId: user?._id?.toString(),
         productId: product?._id?.toString(),
-        qty: 1
+        qty: product?.quantity || 1,
       }
       await serverAddToCart(bodyData);
       loadCartAndWishlist();
@@ -158,9 +158,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     try {
       const bodyData = {
-        qty: quantity
+        qty: quantity,
+        productId: id,
+        userId: String(user?._id?.toString())
       }
-      await serverUpdateCartData(id, bodyData);
+      await serverUpdateCartData(bodyData);
       loadCartAndWishlist();
     } catch (err) {
       console.error("Failed to update item quantity:", err)

@@ -435,11 +435,11 @@ export const serverRemoveToCart = async (userId: string, productId: string) => {
   return res;
 };
 
-export const serverUpdateCartData = async (productId: string, data: any) => {
+export const serverUpdateCartData = async (data: any) => {
   let url = `/cart`;
-  if (productId) {
-    url += `?productId=${productId}`;
-  }
+  // if (productId) {
+  //   url += `?productId=${productId}`;
+  // }
   const res = await serverRequest(url, "PUT", data, true);
   return res;
 };
