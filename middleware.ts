@@ -29,9 +29,10 @@ export function middleware(request: NextRequest) {
 
   // If user is NOT authenticated and tries to access a non-public route, redirect to login
   if (!isAuthenticated && !isPublicRoute) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", path);
-    return NextResponse.redirect(loginUrl);
+    // const loginUrl = new URL("/login", request.url);
+    // loginUrl.searchParams.set("redirect", path);
+    // return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // If user IS authenticated and tries to access login or signup, redirect to home
