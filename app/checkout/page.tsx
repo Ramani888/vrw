@@ -254,8 +254,8 @@ export default function CheckoutPage() {
     }
   }, [user])
 
-  const deliveryCharge = cartData?.totalDeliveryCharge;
-  // const deliveryCharge = 1;
+  // const deliveryCharge = cartData?.totalDeliveryCharge;
+  const deliveryCharge = 1;
 
   const totalPrice = cartData?.data?.reduce((accumulator: any, item: any) => {
     return accumulator + item?.product?.mrp * item?.qty;
@@ -346,7 +346,7 @@ export default function CheckoutPage() {
       ? Math.round(totalGst)
       : Math.round(totalIgst) + Math.round(totalSgst));
 
-  const price = total + parseInt(deliveryCharge);
+  const price = total + parseInt(String(deliveryCharge));
   const isWalletTabDiable = total > 200 ? false : true;
   const walletBalance = useWalletBalance ? rewardData?.remainingReward : 0;
   const finalPrice = price > walletBalance ? price - walletBalance : 0;
@@ -711,7 +711,7 @@ export default function CheckoutPage() {
                   )}
                   <div className="flex justify-between">
                     <span>Delivery Charge</span>
-                    <span>{deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}</span>
+                    <span>{Number(deliveryCharge) === 0 ? "Free" : `₹${deliveryCharge}`}</span>
                   </div>
 
                   {/* Wallet Balance Section */}

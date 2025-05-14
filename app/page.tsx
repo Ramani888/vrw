@@ -42,7 +42,7 @@ export default function Home() {
       {/* Categories */}
       <section className="w-full px-4 md:px-6">
         <h2 className="mb-6 text-2xl font-bold">Shop by Category</h2>
-        <div className="flex overflow-x-auto pb-4 space-x-4 -mx-4 px-4">
+        <div className="flex overflow-x-auto pb-4 space-x-4 -mx-4 px-4 no-scrollbar">
           {categoryData?.map((category: any, index) => (
             <div key={index} className="flex-shrink-0 w-25">
               <CategoryCircle name={category?.name} image={category?.imagePath} slug={category?._id} />
