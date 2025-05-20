@@ -171,7 +171,21 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
   const subtotal = findOrderData?.productDetails?.reduce((total: number, item: any) => total + item?.product?.price * item?.qty, 0)
 
   // Calculate shipping (free over ₹500)
-  const shipping = subtotal > 500 ? 0 : 50
+  // const shipping = subtotal > 500 ? 0 : 50
+
+  const totalWeight = findOrderData?.productDetails?.reduce((total: any, item: any) => total + (item?.product?.weight * item?.qty), 0);
+
+  let totalDeliveryCharge = 0;
+
+  if (totalWeight <= 499) {
+    totalDeliveryCharge = 70;
+  } else if (totalWeight > 499 && totalWeight <= 999) {
+    totalDeliveryCharge = 140;
+  } else if (totalWeight > 999) {
+    totalDeliveryCharge = 210;
+  }
+
+  const finalTotal = subtotal + totalDeliveryCharge;
 
   // Function to download invoice
   const downloadInvoice = () => {
@@ -294,11 +308,11 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
               </tr>
               <tr>
                 <td colspan="3" style="text-align: right;"><strong>Shipping:</strong></td>
-                <td>${shipping === 0 ? "Free" : `₹${shipping}`}</td>
+                <td>${totalDeliveryCharge === 0 ? "Free" : `₹${totalDeliveryCharge}`}</td>
               </tr>
               <tr class="total-row">
                 <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
-                <td>₹${findOrderData?.totalAmount?.toLocaleString()}</td>
+                <td>₹${finalTotal?.toLocaleString()}</td>
               </tr>
             </tfoot>
           </table>
@@ -389,7 +403,6 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
                     <div className="relative h-20 w-20 overflow-hidden rounded-md border">
                       <Image src={item?.product?.image?.[0]?.path || "/placeholder.svg"} alt={item?.product?.name} fill className="object-cover" />
                     </div>
-
                     <div className="flex flex-1 flex-col justify-between">
                       <div>
                         <Link href={`/product/${item?.product?._id}`} className="font-medium hover:underline">
@@ -397,7 +410,6 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
                         </Link>
                         <div className="mt-1 text-sm text-muted-foreground">Quantity: {item?.qty}</div>
                       </div>
-
                       <div className="font-medium">₹{item?.product?.price?.toLocaleString()}</div>
                     </div>
                   </div>
@@ -405,6 +417,39 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
               </div>
             </CardContent>
           </Card>
+
+          {/* Tracking Details */}
+          {findOrderData?.trackingDetails && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Tracking Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium">Tracking Number: </span>
+                    <span>{findOrderData?.trackingDetails?.trackingId || "Not available"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Packing Number: </span>
+                    <span>{findOrderData?.trackingDetails?.packingId || "Not available"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Packing Video: </span>
+                    {findOrderData?.trackingDetails?.video ? (
+                      <video
+                        src={findOrderData?.trackingDetails?.video}
+                        controls
+                        className="w-full max-w-xs mt-2 rounded-md border"
+                      />
+                    ) : (
+                      <span>Not available</span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-8">
@@ -432,14 +477,14 @@ export default function OrderDetailPage({params}: {params: Promise<{ id: string 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span>{shipping === 0 ? "Free" : `₹${shipping}`}</span>
+                  <span>{totalDeliveryCharge === 0 ? "Free" : `₹${totalDeliveryCharge}`}</span>
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total</span>
-                  <span>₹{findOrderData?.totalAmount?.toLocaleString()}</span>
+                  <span>₹{finalTotal?.toLocaleString()}</span>
                 </div>
               </div>
             </CardContent>
