@@ -254,8 +254,8 @@ export default function CheckoutPage() {
     }
   }, [user])
 
-  const deliveryCharge = cartData?.totalDeliveryCharge;
-  // const deliveryCharge = 1;
+  // const deliveryCharge = cartData?.totalDeliveryCharge;
+  const deliveryCharge = 1;
 
   const totalPrice = cartData?.data?.reduce((accumulator: any, item: any) => {
     return accumulator + item?.product?.mrp * item?.qty;
