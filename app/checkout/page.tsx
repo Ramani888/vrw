@@ -17,11 +17,10 @@ import { CreditCard, Wallet, Truck, ShieldCheck, ArrowLeft, Check, MapPin, Plus 
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { serverCreateOrder, serverGetCartData, serverGetDeliveryAddressData, serverGetRewardData } from "@/services/serverApi"
+import { serverCreateOrder, serverCreateRazorpayOrder, serverGetCartData, serverGetDeliveryAddressData, serverGetRewardData, serverVerifyRazorpayPayment } from "@/services/serverApi"
 import { useAuth } from "@/components/auth-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
-import { createRazorpayOrder } from "@/utils/payment"
 
 interface AddressType {
   _id: string;
@@ -106,58 +105,100 @@ export default function CheckoutPage() {
 
   // Handle Razorpay payment
   const handleRazorpayPayment = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!isRazorpayLoaded) {
       toast({
         title: "Payment gateway loading",
         description: "Please wait while we load the payment gateway"
-      })
-      return
+      });
+      return;
     }
 
-    setIsProcessingPayment(true)
+    setIsProcessingPayment(true);
 
     try {
-      // Configure Razorpay options
+      // 1. Create order on backend
+      // const orderRes = await fetch("/api/razorpay/create-order", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ amount: finalPrice * 100, currency: "INR" }),
+      // });
+      const orderData = await serverCreateRazorpayOrder({amount: finalPrice});
+      // console.log("orderRes", orderRes);
+      // const orderData = await orderRes.json();
+      if (!orderData.id) throw new Error("Order creation failed");
+
+      let razorpayInstance: any = null;
+      let pollingInterval: any = null;
+
       const options = {
-        key: "rzp_live_g5FHxyE0FQivlu", // Replace with your Razorpay key
-        amount: finalPrice * 100, // Amount in paise
+        key: "rzp_live_g5FHxyE0FQivlu",
+        amount: finalPrice * 100,
         currency: "INR",
         name: "VR Fashion",
         description: "Purchase from VR Fashion",
+        order_id: orderData.id,
         handler: (response: any) => {
-          // Handle successful payment
-          processOrder("Razorpay", response.razorpay_payment_id, Number(finalPrice))
+          // For card/UPI direct payments
+          clearInterval(pollingInterval);
+          processOrder("Razorpay", response.razorpay_payment_id, Number(finalPrice));
         },
         prefill: {
           name: user?.name || "",
           email: user?.email || "",
           contact: user?.mobileNumber || "",
         },
-        theme: {
-          color: "#3B82F6",
-        },
+        theme: { color: "#3B82F6" },
         modal: {
-          ondismiss: () => {
-            setIsProcessingPayment(false)
-            toast({
-              title: "Payment cancelled",
-              description: "You have cancelled the payment process"
-            })
+          ondismiss: async () => {
+            clearInterval(pollingInterval);
+            setIsProcessingPayment(false);
+            // Check payment status one last time
+            // const statusRes = await fetch(`/api/razorpay/check-status?order_id=${orderData.id}`);
+            const statusData = await serverVerifyRazorpayPayment(orderData?.id);
+            // console.log("modal statusRes", statusRes);
+            // const statusData = await statusRes.json();
+            if (statusData.status === "paid") {
+              processOrder("Razorpay", statusData.payment_id, Number(finalPrice));
+            } else {
+              toast({
+                title: "Payment not completed",
+                description: "You have cancelled the payment or payment is pending."
+              });
+            }
           },
         },
-      }
+      };
 
-      // Open Razorpay checkout
-      const razorpay = new (window as any).Razorpay(options)
-      razorpay.open()
+      razorpayInstance = new (window as any).Razorpay(options);
+      razorpayInstance.open();
+
+      // 2. Poll for payment status every 5 seconds
+      pollingInterval = setInterval(async () => {
+        // const statusRes = await fetch(`/api/razorpay/check-status?order_id=${orderData.id}`);
+        const statusData = await serverVerifyRazorpayPayment(orderData?.id);
+        // console.log("polling statusRes", statusRes);
+        // const statusData = await statusRes.json();
+        if (statusData.status === "paid") {
+          clearInterval(pollingInterval);
+          razorpayInstance.close(); // Close the modal programmatically
+          processOrder("Razorpay", statusData.payment_id, Number(finalPrice));
+        }
+      }, 5000);
+
+      // Optionally, show a message to the user
+      toast({
+        title: "Scan & Pay",
+        description: "After scanning and paying, please wait for confirmation or click 'I have paid' in the Razorpay popup."
+      });
+
     } catch (error) {
-      console.error("Payment error:", error)
+      console.error("Payment error:", error);
       toast({
         title: "Payment error",
         description: "There was an error processing your payment. Please try again."
-      })
-      setIsProcessingPayment(false)
+      });
+      setIsProcessingPayment(false);
     }
   }
 

@@ -273,6 +273,18 @@ export const serverCreateOrder = async (data: any) => {
   return res;
 };
 
+export const serverCreateRazorpayOrder = async (data: any) => {
+  let url = `/order/razorpay`;
+  const res = await serverRequest(url, "POST", data, true);
+  return res;
+}
+
+export const serverVerifyRazorpayPayment = async (order_id: string) => {
+  let url = `/order/razorpay/verify?order_id=${order_id}`;
+  const res = await serverRequest(url, "GET", null, true);
+  return res;
+}
+
 ////////// Tracking Order Api //////////
 export const serverInsertTrackingDetail = async (data: any) => {
   const res = await serverRequest("/tracking", "POST", data, true);
