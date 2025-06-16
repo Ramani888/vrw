@@ -57,6 +57,10 @@ export default function Header() {
     { href: "/categories", label: "Categories" },
     // { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact Us" },
+    // { href: "/terms-conditions", label: "Terms & Conditions" },
+    // { href: "/privacy-policy", label: "Privacy Policy" },
+    // { href: "/return-refund-cancellation-policy", label: "Return/Refund/Cancellation Policy" },
+    // { href: "/shipping-policy", label: "Shipping Policy" },
   ]
 
   const {
@@ -305,6 +309,26 @@ export default function Header() {
                 <DropdownMenuItem>
                   <Link href="/account/wallet" className="w-full">
                     My Wallet
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/terms-conditions" className="w-full">
+                    Terms & Condition
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/privacy-policy" className="w-full">
+                    Privacy Policy
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/return-refund-cancellation-policy" className="w-full">
+                    Return/Refund/Cancellation Policy
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/shipping-policy" className="w-full">
+                    Shipping Policy
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout}>
