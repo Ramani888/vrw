@@ -115,7 +115,7 @@ export default function Header() {
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <h3 className="font-medium">Welcome to ShopEase</h3>
+                      <h3 className="font-medium">Welcome to VR Fashion</h3>
                       <Button onClick={handleLoginClick}>Sign In</Button>
                     </div>
                   )}
@@ -263,29 +263,33 @@ export default function Header() {
 
         {/* Cart, Wishlist, User */}
         <div className="flex items-center gap-4">
-          <Link href={isAuthenticated ? "/wishlist" : "/login"}>
-            <Button variant="ghost" size="icon" className="relative">
-              <Heart className="h-5 w-5" />
-              {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                  {wishlist.length}
-                </span>
-              )}
-              <span className="sr-only">Wishlist</span>
-            </Button>
-          </Link>
+          {isAuthenticated && (
+            <Link href={isAuthenticated ? "/wishlist" : "/login"}>
+              <Button variant="ghost" size="icon" className="relative">
+                <Heart className="h-5 w-5" />
+                {wishlist.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                    {wishlist.length}
+                  </span>
+                )}
+                <span className="sr-only">Wishlist</span>
+              </Button>
+            </Link>
+          )}
 
-          <Link href={isAuthenticated ? "/cart" : "/login"}>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cart.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                  {cart.length}
-                </span>
-              )}
-              <span className="sr-only">Cart</span>
-            </Button>
-          </Link>
+          {isAuthenticated && (
+            <Link href={isAuthenticated ? "/cart" : "/login"}>
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {cart.length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                    {cart.length}
+                  </span>
+                )}
+                <span className="sr-only">Cart</span>
+              </Button>
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <DropdownMenu>
@@ -337,9 +341,41 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="outline" size="sm" onClick={handleLoginClick}>
-              Sign In
-            </Button>
+            <>
+              <Button variant="outline" size="sm" onClick={handleLoginClick}>
+                Sign In
+              </Button>
+              <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Info className="h-5 w-5" />
+                  <span className="sr-only">More Info</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Link href="/terms-conditions" className="w-full">
+                    Terms & Condition
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/privacy-policy" className="w-full">
+                    Privacy Policy
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/return-refund-cancellation-policy" className="w-full">
+                    Return/Refund/Cancellation Policy
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/shipping-policy" className="w-full">
+                    Shipping Policy
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            </>
           )}
         </div>
       </div>
