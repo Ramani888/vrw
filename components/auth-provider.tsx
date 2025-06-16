@@ -25,7 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Public routes that don't require authentication
 const publicRoutes = [
   "/", "/shop", "/categories", "/category", "/product",
-  "/about", "/contact", "/login", "/signup"
+  "/about", "/contact", "/login", "/signup", "/privacy-policy", "/terms-conditions", "/return-refund-cancellation-policy", "/shipping-policy"
 ]
 
 export function AuthProvider({ children }: { children: ReactNode }) {
