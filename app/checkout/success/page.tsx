@@ -19,7 +19,7 @@ function CheckoutSuccessForm() {
   }, [])
 
   return (
-    <div className="container flex flex-col items-center justify-center px-4 py-12 md:py-24">
+    <div className="w-full flex flex-col items-center justify-center px-4 py-12 md:py-24">
       <div className="mx-auto max-w-md text-center">
         <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
 
@@ -51,10 +51,10 @@ function CheckoutSuccessForm() {
                 <span className="font-medium">{paymentId}</span>
               </div>
             )}
-            <div className="flex justify-between">
+            {/* <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping Address:</span>
               <span className="font-medium text-right">123 Main St, Anytown</span>
-            </div>
+            </div> */}
           </div>
         </div>
 
