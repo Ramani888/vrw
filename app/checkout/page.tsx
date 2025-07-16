@@ -17,7 +17,7 @@ import { CreditCard, Wallet, Truck, ShieldCheck, ArrowLeft, Check, MapPin, Plus 
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { serverCreateOrder, serverCreateRazorpayOrder, serverGetCartData, serverGetDeliveryAddressData, serverGetRewardData, serverVerifyRazorpayPayment } from "@/services/serverApi"
+import { serverCreateOrder, serverCreateRazorpayOrder, serverGetCartData, serverGetDeliveryAddressData, serverGetPaymentMethod, serverGetRewardData, serverVerifyRazorpayPayment } from "@/services/serverApi"
 import { useAuth } from "@/components/auth-provider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/hooks/use-toast"
@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   const { cart, clearCart } = useCart()
   const [step, setStep] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState("card")
+  const [isCashOnDelivery, setIsCashOnDelivery] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [useWalletBalance, setUseWalletBalance] = useState(false)
   const [loading, setLoading] = useState<boolean>(false);
@@ -287,11 +288,25 @@ export default function CheckoutPage() {
     }
   }
 
+  const getPaymentMethodData = async () => {
+    try {
+      setLoading(true);
+      const res = await serverGetPaymentMethod();
+      console.log("Payment methods response:", res);
+      setIsCashOnDelivery(res?.data?.isCashOnDelivery || false);
+    } catch (err) {
+      console.error("Error fetching payment methods:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (user?._id) {
       getCartData();
       getRewardData();
       getAddressData();
+      getPaymentMethodData();
     }
   }, [user])
 
@@ -518,14 +533,12 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Checkout Steps */}
           <div className="lg:col-span-2">
-            {/* Step indicators removed as per comment */}
-
             {step === 1 ? (
               <div className="rounded-lg border">
                 <div className="p-6">
                   <h2 className="text-xl font-medium">Shipping Address</h2>
 
-                  <form onSubmit={handleRazorpayPayment} className="mt-6 space-y-4">
+                  <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <h3 className="font-medium">Select Delivery Address</h3>
@@ -606,76 +619,36 @@ export default function CheckoutPage() {
                 </div>
               </div>
             ) : (
-              <></>
-              // <div className="rounded-lg border">
-              //   <div className="p-6">
-              //     <h2 className="text-xl font-medium">Payment Method</h2>
+              <div className="rounded-lg border">
+                <div className="p-6">
+                  <h2 className="text-xl font-medium">Payment Method</h2>
 
-              //     <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-              //       <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-              //         <div className="flex items-center space-x-2 rounded-lg border p-4">
-              //           <RadioGroupItem value="card" id="card" />
-              //           <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer">
-              //             <CreditCard className="h-5 w-5" />
-              //             Credit/Debit Card
-              //           </Label>
-              //         </div>
+                  <form onSubmit={paymentMethod === "razorpay" ? handleRazorpayPayment : handleSubmit} className="mt-6 space-y-6">
+                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <div className="flex items-center space-x-2 rounded-lg border p-4">
+                        <RadioGroupItem value="razorpay" id="razorpay" />
+                        <Label htmlFor="razorpay" className="flex items-center gap-2 cursor-pointer">
+                          <CreditCard className="h-5 w-5" />
+                          Online Payment (Razorpay)
+                        </Label>
+                      </div>
+                      {isCashOnDelivery && (
+                        <div className="flex items-center space-x-2 rounded-lg border p-4">
+                          <RadioGroupItem value="cod" id="cod" />
+                          <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer">
+                            <Truck className="h-5 w-5" />
+                            Cash on Delivery
+                          </Label>
+                        </div>
+                      )}
+                    </RadioGroup>
 
-              //         <div className="flex items-center space-x-2 rounded-lg border p-4">
-              //           <RadioGroupItem value="upi" id="upi" />
-              //           <Label htmlFor="upi" className="flex items-center gap-2 cursor-pointer">
-              //             <Wallet className="h-5 w-5" />
-              //             UPI Payment
-              //           </Label>
-              //         </div>
-
-              //         <div className="flex items-center space-x-2 rounded-lg border p-4">
-              //           <RadioGroupItem value="cod" id="cod" />
-              //           <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer">
-              //             <Truck className="h-5 w-5" />
-              //             Cash on Delivery
-              //           </Label>
-              //         </div>
-              //       </RadioGroup>
-
-              //       {paymentMethod === "card" && (
-              //         <div className="space-y-4">
-              //           <div>
-              //             <Label htmlFor="cardNumber">Card Number</Label>
-              //             <Input id="cardNumber" placeholder="1234 5678 9012 3456" required />
-              //           </div>
-
-              //           <div className="grid grid-cols-2 gap-4">
-              //             <div>
-              //               <Label htmlFor="expiry">Expiry Date</Label>
-              //               <Input id="expiry" placeholder="MM/YY" required />
-              //             </div>
-              //             <div>
-              //               <Label htmlFor="cvv">CVV</Label>
-              //               <Input id="cvv" placeholder="123" required />
-              //             </div>
-              //           </div>
-
-              //           <div>
-              //             <Label htmlFor="nameOnCard">Name on Card</Label>
-              //             <Input id="nameOnCard" required />
-              //           </div>
-              //         </div>
-              //       )}
-
-              //       {paymentMethod === "upi" && (
-              //         <div>
-              //           <Label htmlFor="upiId">UPI ID</Label>
-              //           <Input id="upiId" placeholder="name@upi" required />
-              //         </div>
-              //       )}
-
-              //       <Button type="submit" className="w-full">
-              //         Place Order
-              //       </Button>
-              //     </form>
-              //   </div>
-              // </div>
+                    <Button type="submit" className="w-full">
+                      {paymentMethod === "razorpay" ? "Pay with Razorpay" : "Place Order"}
+                    </Button>
+                  </form>
+                </div>
+              </div>
             )}
           </div>
 

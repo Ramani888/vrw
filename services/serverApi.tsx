@@ -515,3 +515,9 @@ export const serverRefundPayment = async (data: any) => {
   const res = await serverRequest(url, "POST", data, true);
   return res;
 }
+
+/********** Settings Api **********/
+export const serverGetPaymentMethod = async () => {
+  const res = await serverRequest('/payment/method', 'GET', null, true);
+  return res;
+}
